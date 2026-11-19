@@ -39,8 +39,8 @@ jobs:
       IMAGE_TAG: ${{ github.sha }}
       RUN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
@@ -110,7 +110,7 @@ jobs:
           if [ "$status" != "STOPPED" ]; then
             aws ecs stop-task --cluster "${{ vars.ECS_CLUSTER }}" --task "$TASK_ARN" --reason "pipeline cleanup"
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: fargate-evidence
@@ -126,11 +126,11 @@ jobs:
     env:
       AWS_REGION: us-west-2 # Device Farm's region
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: us-west-2
@@ -191,7 +191,7 @@ jobs:
           for arn in "${APP_ARN:-}" "${PACKAGE_ARN:-}" "${SPEC_ARN:-}"; do
             [ -n "$arn" ] && aws devicefarm delete-upload --arn "$arn" || true
           done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: device-farm-evidence
