@@ -1,0 +1,138 @@
+# EXAM CASE (Unit 4, Day 18) - "QA Platform v1" by a fictional team. Deliberately flawed: audit it.
+# Do NOT deploy this template.
+AWSTemplateFormatVersion: "2010-09-09"
+Description: QA platform v1 - runs the regression suite and keeps reports for the team
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  PublicSubnetId:
+    Type: AWS::EC2::Subnet::Id
+  PrivateSubnetId:
+    Type: AWS::EC2::Subnet::Id
+
+Resources:
+  ReportsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: qa-platform-reports
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  ReportsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ReportsBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: TeamCanOpenReportsFromAnywhere
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "${ReportsBucket.Arn}/*"
+
+  Repo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: qa-runner
+
+  Logs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /qa/runner
+
+  NatIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  Nat:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatIp.AllocationId
+      SubnetId: !Ref PublicSubnetId
+
+  RunnerSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: runner
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  Cluster:
+    Type: AWS::ECS::Cluster
+
+  RunnerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: everything-the-tests-might-need
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ["s3:*", "logs:*", "ecs:*"]
+                Resource: "*"
+              - Effect: Allow
+                Action: iam:PassRole
+                Resource: "*"
+
+  CiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Sub "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
+            Action: sts:AssumeRoleWithWebIdentity
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  RunnerTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: "4096"
+      Memory: "16384"
+      ExecutionRoleArn: !GetAtt RunnerRole.Arn
+      TaskRoleArn: !GetAtt RunnerRole.Arn
+      ContainerDefinitions:
+        - Name: runner
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/qa-runner:latest"
+          Environment:
+            - Name: SHOP_ADMIN_PASSWORD
+              Value: Summer2026!
+            - Name: SLACK_WEBHOOK_TOKEN
+              Value: xoxb-not-a-real-token
+            - Name: SUITE
+              Value: regression
+
+  RegressionService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      DesiredCount: 1
+      TaskDefinition: !Ref RunnerTask
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: [!Ref PrivateSubnetId]
+          SecurityGroups: [!Ref RunnerSg]

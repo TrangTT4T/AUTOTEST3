@@ -1,0 +1,294 @@
+{
+  "_source": "saucelabs/my-demo-app-android af2c830 2026-10-29, BaseActivity.populateProductsDb (static extraction, not run on a device)",
+  "currency": "USD",
+  "products": [
+    {
+      "title": "Sauce Labs Bolt T-Shirt",
+      "handle": "sauce-labs-bolt-t-shirt",
+      "variants": [
+        {
+          "id": 1,
+          "title": "Default",
+          "price": "15.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Fleece Jacket",
+      "handle": "sauce-labs-fleece-jacket",
+      "variants": [
+        {
+          "id": 2,
+          "title": "Default",
+          "price": "49.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Onesie",
+      "handle": "sauce-labs-onesie",
+      "variants": [
+        {
+          "id": 3,
+          "title": "Default",
+          "price": "7.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Backpack",
+      "handle": "sauce-labs-backpack",
+      "variants": [
+        {
+          "id": 4,
+          "title": "Default",
+          "price": "29.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Bike Light",
+      "handle": "sauce-labs-bike-light",
+      "variants": [
+        {
+          "id": 5,
+          "title": "Default",
+          "price": "9.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Test.allTheThings() T-Shirt",
+      "handle": "test-allthethings-t-shirt",
+      "variants": [
+        {
+          "id": 6,
+          "title": "Default",
+          "price": "15.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Bolt T-Shirt (blue)",
+      "handle": "sauce-labs-bolt-t-shirt-blue",
+      "variants": [
+        {
+          "id": 7,
+          "title": "Default",
+          "price": "15.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Bolt T-Shirt (green)",
+      "handle": "sauce-labs-bolt-t-shirt-green",
+      "variants": [
+        {
+          "id": 8,
+          "title": "Default",
+          "price": "15.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Bolt T-Shirt (red)",
+      "handle": "sauce-labs-bolt-t-shirt-red",
+      "variants": [
+        {
+          "id": 9,
+          "title": "Default",
+          "price": "15.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Bolt T-Shirt (yellow)",
+      "handle": "sauce-labs-bolt-t-shirt-yellow",
+      "variants": [
+        {
+          "id": 10,
+          "title": "Default",
+          "price": "15.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Test.allTheThings() T-Shirt (turquoise)",
+      "handle": "test-allthethings-t-shirt-turquoise",
+      "variants": [
+        {
+          "id": 11,
+          "title": "Default",
+          "price": "15.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Test.allTheThings() T-Shirt (pink)",
+      "handle": "test-allthethings-t-shirt-pink",
+      "variants": [
+        {
+          "id": 12,
+          "title": "Default",
+          "price": "15.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Test.allTheThings() T-Shirt (purple)",
+      "handle": "test-allthethings-t-shirt-purple",
+      "variants": [
+        {
+          "id": 13,
+          "title": "Default",
+          "price": "15.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Test.allTheThings() T-Shirt (yellow)",
+      "handle": "test-allthethings-t-shirt-yellow",
+      "variants": [
+        {
+          "id": 14,
+          "title": "Default",
+          "price": "15.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Fleece Jacket (blue)",
+      "handle": "sauce-labs-fleece-jacket-blue",
+      "variants": [
+        {
+          "id": 15,
+          "title": "Default",
+          "price": "49.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Fleece Jacket (brown)",
+      "handle": "sauce-labs-fleece-jacket-brown",
+      "variants": [
+        {
+          "id": 16,
+          "title": "Default",
+          "price": "49.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Fleece Jacket (green)",
+      "handle": "sauce-labs-fleece-jacket-green",
+      "variants": [
+        {
+          "id": 17,
+          "title": "Default",
+          "price": "49.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Fleece Jacket (pink)",
+      "handle": "sauce-labs-fleece-jacket-pink",
+      "variants": [
+        {
+          "id": 18,
+          "title": "Default",
+          "price": "49.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Fleece Jacket (red)",
+      "handle": "sauce-labs-fleece-jacket-red",
+      "variants": [
+        {
+          "id": 19,
+          "title": "Default",
+          "price": "49.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Backpack (green)",
+      "handle": "sauce-labs-backpack-green",
+      "variants": [
+        {
+          "id": 20,
+          "title": "Default",
+          "price": "29.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Backpack (orange)",
+      "handle": "sauce-labs-backpack-orange",
+      "variants": [
+        {
+          "id": 21,
+          "title": "Default",
+          "price": "29.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Backpack (red)",
+      "handle": "sauce-labs-backpack-red",
+      "variants": [
+        {
+          "id": 22,
+          "title": "Default",
+          "price": "29.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Backpack (violet)",
+      "handle": "sauce-labs-backpack-violet",
+      "variants": [
+        {
+          "id": 23,
+          "title": "Default",
+          "price": "29.99",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Sauce Labs Backpack (yellow)",
+      "handle": "sauce-labs-backpack-yellow",
+      "variants": [
+        {
+          "id": 24,
+          "title": "Default",
+          "price": "29.99",
+          "available": true
+        }
+      ]
+    }
+  ]
+}

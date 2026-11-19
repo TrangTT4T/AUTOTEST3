@@ -1,0 +1,13 @@
+# Everything needed to RUN the suites (also inside the test-runner image), pinned to the versions
+# this suite was verified with. Development-only tools (linters, type checker) are in requirements-dev.txt.
+pytest==9.2.0
+pytest-bdd==9.0.1
+pytest-playwright==0.10.0
+playwright==1.63.0
+pytest-xdist==3.8.0
+Appium-Python-Client==6.1.7
+aiohttp==3.14.5
+websockets==17.4
+boto3==1.44.5
+moto[s3]==5.2.5        # S3 double for the artifact-store tests
+PyYAML==6.0.3          # the cloud audit reads YAML

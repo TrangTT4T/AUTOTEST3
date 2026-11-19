@@ -1,0 +1,131 @@
+{
+  "_source": "https://sauce-demo.myshopify.com/products.json, recorded 2026-11-18, trimmed to the fields the framework uses",
+  "products": [
+    {
+      "title": "Brown Shades",
+      "handle": "brown-shades",
+      "variants": [
+        {
+          "id": 1063105029,
+          "title": "Default Title",
+          "price": "20.00",
+          "available": false
+        }
+      ]
+    },
+    {
+      "title": "Noir jacket",
+      "handle": "noir-jacket",
+      "variants": [
+        {
+          "id": 611952521,
+          "title": "S / Blue",
+          "price": "60.00",
+          "available": true
+        },
+        {
+          "id": 7295557889,
+          "title": "M / Blue",
+          "price": "60.00",
+          "available": true
+        },
+        {
+          "id": 7295558017,
+          "title": "L / Blue",
+          "price": "60.00",
+          "available": true
+        },
+        {
+          "id": 7805229441,
+          "title": "S / Red",
+          "price": "60.00",
+          "available": true
+        },
+        {
+          "id": 7805236929,
+          "title": "M / Red",
+          "price": "60.00",
+          "available": true
+        },
+        {
+          "id": 7805238401,
+          "title": "L / Red",
+          "price": "60.00",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Striped top",
+      "handle": "striped-top",
+      "variants": [
+        {
+          "id": 611951029,
+          "title": "Default Title",
+          "price": "50.00",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Grey jacket",
+      "handle": "grey-jacket",
+      "variants": [
+        {
+          "id": 611945025,
+          "title": "Grey jacket",
+          "price": "55.00",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Black heels",
+      "handle": "flower-print-jeans",
+      "variants": [
+        {
+          "id": 611942549,
+          "title": "S / Red",
+          "price": "45.00",
+          "available": true
+        },
+        {
+          "id": 7176066113,
+          "title": "M / Red",
+          "price": "45.00",
+          "available": true
+        },
+        {
+          "id": 7176066241,
+          "title": "L / Red",
+          "price": "45.00",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "White sandals",
+      "handle": "white-sandals",
+      "variants": [
+        {
+          "id": 611940609,
+          "title": "Default Title",
+          "price": "25.00",
+          "available": false
+        }
+      ]
+    },
+    {
+      "title": "Bronze sandals",
+      "handle": "bronze-sandals",
+      "variants": [
+        {
+          "id": 611931337,
+          "title": "Default Title",
+          "price": "39.99",
+          "available": true
+        }
+      ]
+    }
+  ]
+}

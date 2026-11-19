@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+reports/
+archive/
+build/
+apache-jmeter-*/
+*.tgz
+*.apk
+test-results/
+.coverage
+coverage.xml
+jmeter.log
+*.log
+*.jtl

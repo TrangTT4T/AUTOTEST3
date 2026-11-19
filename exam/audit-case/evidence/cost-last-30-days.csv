@@ -1,0 +1,10 @@
+service,usage_type,usd
+Amazon VPC,NatGateway-Hours,32.85
+Amazon VPC,NatGateway-Bytes,11.20
+Amazon ECS,Fargate-vCPU-Hours (regression service 24/7),118.20
+Amazon ECS,Fargate-GB-Hours (regression service 24/7),52.40
+Amazon CloudWatch,DataProcessing-Bytes (logs ingestion),21.30
+Amazon CloudWatch,TimedStorage-ByteHrs (logs never expire),4.10
+Amazon S3,TimedStorage-ByteHrs (reports since 2024),9.75
+AWS Device Farm,Device minutes (3 runs left running to the 150-minute default timeout),76.50
+Total,,326.30

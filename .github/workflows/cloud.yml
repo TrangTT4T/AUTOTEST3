@@ -1,0 +1,199 @@
+# Cloud pipeline (Unit 4, Day 17) - REFERENCE: it needs an AWS account set up with
+# cloud/cloudformation/*.yaml and these repository variables. Without them every job is skipped.
+#   AWS_REGION, AWS_ROLE_ARN, ECR_REPOSITORY, ECS_CLUSTER, TASK_FAMILY, SUBNET_IDS, SECURITY_GROUP_ID,
+#   ARTIFACTS_BUCKET, DEVICEFARM_PROJECT_ARN, DEVICEFARM_POOL_ARN, ANDROID_APP_URL
+# Every job runs in the GitHub environment "aws-lab" (required reviewer = a human approves each run)
+# and gets short-lived AWS credentials through OIDC: no access keys are stored anywhere.
+name: cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Suite to run in the container
+        type: choice
+        options: [offline, events, unit]
+        default: offline
+      device_farm:
+        description: Also run the mobile suite on AWS Device Farm (billed per device minute)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write # OIDC token for AWS; nothing else
+
+concurrency:
+  group: cloud # one cloud run at a time: predictable cost, no clashing resources
+  cancel-in-progress: false
+
+jobs:
+  fargate:
+    name: Container on ECS/Fargate
+    if: vars.AWS_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    environment: aws-lab
+    timeout-minutes: 30
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      IMAGE_TAG: ${{ github.sha }}
+      RUN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 3600
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and push (immutable tag = commit)
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          image="$REGISTRY/${{ vars.ECR_REPOSITORY }}:$IMAGE_TAG"
+          docker build -f docker/Dockerfile -t "$image" --build-arg GIT_SHA="$IMAGE_TAG" .
+          docker push "$image"
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+      - name: Gate - image scan has no critical findings
+        run: |
+          aws ecr wait image-scan-complete --repository-name "${{ vars.ECR_REPOSITORY }}" --image-id imageTag="$IMAGE_TAG"
+          critical=$(aws ecr describe-image-scan-findings --repository-name "${{ vars.ECR_REPOSITORY }}" \
+            --image-id imageTag="$IMAGE_TAG" --query 'imageScanFindings.findingSeverityCounts.CRITICAL' --output text)
+          [ "$critical" = "None" ] && critical=0 # no CRITICAL key = none found
+          echo "critical findings: $critical"
+          test "$critical" -eq 0
+      - name: Register a task definition revision for this image
+        run: |
+          aws ecs describe-task-definition --task-definition "${{ vars.TASK_FAMILY }}" --query taskDefinition > td.json
+          jq --arg img "$IMAGE" --arg tag "$IMAGE_TAG" '
+            .containerDefinitions[0].image = $img
+            | .containerDefinitions[0].environment |= map(if .name == "IMAGE_TAG" then .value = $tag else . end)
+            | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities,
+                  .registeredAt, .registeredBy)' td.json > td-new.json
+          arn=$(aws ecs register-task-definition --cli-input-json file://td-new.json --query taskDefinition.taskDefinitionArn --output text)
+          echo "TASK_DEF=$arn" >> "$GITHUB_ENV"
+      - name: Run the suite on Fargate
+        run: |
+          overrides=$(jq -nc --arg suite "${{ inputs.suite }}" --arg run "$RUN_ID" \
+            '{containerOverrides: [{name: "tests", environment: [{name: "SUITE", value: $suite}, {name: "RUN_ID", value: $run}]}]}')
+          task=$(aws ecs run-task --cluster "${{ vars.ECS_CLUSTER }}" --task-definition "$TASK_DEF" \
+            --launch-type FARGATE --count 1 --started-by "$RUN_ID" --overrides "$overrides" \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ vars.SUBNET_IDS }}],securityGroups=[${{ vars.SECURITY_GROUP_ID }}],assignPublicIp=ENABLED}" \
+            --query 'tasks[0].taskArn' --output text)
+          echo "TASK_ARN=$task" >> "$GITHUB_ENV"
+          echo "task: $task"
+      - name: Wait for the task to stop (bounded)
+        run: |
+          aws ecs wait tasks-stopped --cluster "${{ vars.ECS_CLUSTER }}" --tasks "$TASK_ARN"
+          aws ecs describe-tasks --cluster "${{ vars.ECS_CLUSTER }}" --tasks "$TASK_ARN" \
+            --query 'tasks[0].{exit: containers[0].exitCode, reason: stoppedReason, stopCode: stopCode}' > task-result.json
+          cat task-result.json
+      - name: Collect evidence (artifacts from S3, log events from CloudWatch)
+        if: always() && env.TASK_ARN != ''
+        run: |
+          mkdir -p evidence
+          aws s3 sync "s3://${{ vars.ARTIFACTS_BUCKET }}/runs/$RUN_ID/" evidence/artifacts/ || true
+          stream="run/tests/${TASK_ARN##*/}"
+          aws logs get-log-events --log-group-name "/ecs/shop-bdd-tests" --log-stream-name "$stream" \
+            --start-from-head --query 'events[].message' --output text > evidence/container.log || true
+          cp task-result.json evidence/ || true
+      - name: Gate - the container's exit code
+        run: |
+          code=$(jq -r '.exit' task-result.json)
+          echo "exit code: $code (0 pass, 1 tests failed, 75 artifacts not stored, null = never started)"
+          test "$code" = "0"
+      - name: Cleanup - never leave a task running
+        if: always() && env.TASK_ARN != ''
+        run: |
+          status=$(aws ecs describe-tasks --cluster "${{ vars.ECS_CLUSTER }}" --tasks "$TASK_ARN" --query 'tasks[0].lastStatus' --output text)
+          if [ "$status" != "STOPPED" ]; then
+            aws ecs stop-task --cluster "${{ vars.ECS_CLUSTER }}" --task "$TASK_ARN" --reason "pipeline cleanup"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fargate-evidence
+          path: evidence/
+          retention-days: 14
+
+  device-farm:
+    name: Mobile suite on AWS Device Farm
+    if: vars.AWS_ROLE_ARN != '' && inputs.device_farm
+    runs-on: ubuntu-latest
+    environment: aws-lab
+    timeout-minutes: 45
+    env:
+      AWS_REGION: us-west-2 # Device Farm's region
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-west-2
+      - name: Build the test package and fetch the app
+        run: |
+          bash cloud/devicefarm/build_test_package.sh build/devicefarm
+          curl -sSfL -o build/devicefarm/app.apk "${{ vars.ANDROID_APP_URL }}"
+      - name: Upload app, tests, and test spec
+        run: |
+          upload() { # file type -> prints the upload ARN once Device Farm has processed it
+            read -r arn url < <(aws devicefarm create-upload --project-arn "${{ vars.DEVICEFARM_PROJECT_ARN }}" \
+              --name "$(basename "$1")" --type "$2" --query 'upload.[arn,url]' --output text)
+            curl -sSf -T "$1" "$url" > /dev/null
+            for _ in $(seq 1 60); do
+              status=$(aws devicefarm get-upload --arn "$arn" --query upload.status --output text)
+              [ "$status" = "SUCCEEDED" ] && { echo "$arn"; return 0; }
+              [ "$status" = "FAILED" ] && { aws devicefarm get-upload --arn "$arn" --query upload.metadata >&2; return 1; }
+              sleep 5
+            done
+            return 1
+          }
+          {
+            echo "APP_ARN=$(upload build/devicefarm/app.apk ANDROID_APP)"
+            echo "PACKAGE_ARN=$(upload build/devicefarm/test_package.zip APPIUM_PYTHON_TEST_PACKAGE)"
+            echo "SPEC_ARN=$(upload cloud/devicefarm/testspec.yml APPIUM_PYTHON_TEST_SPEC)"
+          } >> "$GITHUB_ENV"
+      - name: Schedule the run
+        run: |
+          run=$(aws devicefarm schedule-run --project-arn "${{ vars.DEVICEFARM_PROJECT_ARN }}" \
+            --app-arn "$APP_ARN" --device-pool-arn "${{ vars.DEVICEFARM_POOL_ARN }}" --name "gha-${{ github.run_id }}" \
+            --test "type=APPIUM_PYTHON,testPackageArn=$PACKAGE_ARN,testSpecArn=$SPEC_ARN" \
+            --execution-configuration jobTimeoutMinutes=20 --query run.arn --output text)
+          echo "RUN_ARN=$run" >> "$GITHUB_ENV"
+      - name: Wait for the result (bounded)
+        run: |
+          for _ in $(seq 1 120); do
+            status=$(aws devicefarm get-run --arn "$RUN_ARN" --query run.status --output text)
+            [ "$status" = "COMPLETED" ] && break
+            sleep 15
+          done
+          aws devicefarm get-run --arn "$RUN_ARN" --query 'run.{status: status, result: result, counters: counters, minutes: deviceMinutes}' | tee run-result.json
+      - name: Download artifacts (logs, video, our reports)
+        if: always() && env.RUN_ARN != ''
+        run: |
+          mkdir -p evidence
+          for type in FILE LOG SCREENSHOT; do
+            aws devicefarm list-artifacts --arn "$RUN_ARN" --type "$type" --query 'artifacts[].[name,extension,url]' --output text |
+              while read -r name ext url; do curl -sSfL -o "evidence/${name// /_}.${ext}" "$url" || true; done
+          done
+      - name: Gate - Device Farm result
+        run: test "$(jq -r .result run-result.json)" = "PASSED"
+      - name: Cleanup - stop an unfinished run, delete the uploads
+        if: always()
+        run: |
+          if [ -n "${RUN_ARN:-}" ] && [ "$(aws devicefarm get-run --arn "$RUN_ARN" --query run.status --output text)" != "COMPLETED" ]; then
+            aws devicefarm stop-run --arn "$RUN_ARN"
+          fi
+          for arn in "${APP_ARN:-}" "${PACKAGE_ARN:-}" "${SPEC_ARN:-}"; do
+            [ -n "$arn" ] && aws devicefarm delete-upload --arn "$arn" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: device-farm-evidence
+          path: evidence/
+          retention-days: 14

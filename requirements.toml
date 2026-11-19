@@ -1,0 +1,62 @@
+# Requirement registry: the single source of truth for requirement IDs,
+# titles, and risk levels (from the Day 1 risk register).
+#
+# The framework enforces it:
+#   * every @REQ-xx tag must exist here;
+#   * a scenario's @risk-* tag must equal the highest risk of its requirements;
+#   * the traceability report lists every requirement here, covered or not.
+
+[REQ-01]
+title = "Search products by keyword"
+risk = "medium"
+
+[REQ-02]
+title = "Product page shows name, price, availability"
+risk = "medium"
+
+[REQ-03]
+title = "Add an available product to the cart"
+risk = "high"
+
+[REQ-04]
+title = "Cart shows correct items, quantities, subtotal"
+risk = "high"
+
+[REQ-05]
+title = "Change quantity or remove an item"
+risk = "high"
+
+[REQ-06]
+title = "Sold-out product cannot be added"
+risk = "medium"
+
+[REQ-07]
+title = "Proceed from cart to checkout"
+risk = "medium"
+
+[REQ-08]
+title = "Sign up and log in"
+risk = "medium"
+
+[REQ-09]
+title = "Information pages reachable from navigation"
+risk = "low"
+
+# Unit 3, Day 12: the asynchronous order-events system (sandbox/). Risk from its failure
+# impact: a double charge or a status that goes backwards hurts customers directly.
+
+[REQ-10]
+title = "Each order is charged and processed exactly once"
+risk = "high"
+
+[REQ-11]
+title = "Order status never goes backwards"
+risk = "high"
+
+[REQ-12]
+title = "Failing messages are retried, then dead-lettered"
+risk = "medium"
+
+[REQ-13]
+title = "Status visible within 2 s, also after reconnect"
+risk = "medium"

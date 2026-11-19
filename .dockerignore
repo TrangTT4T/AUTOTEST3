@@ -1,0 +1,14 @@
+# Everything not needed to RUN the suites stays out of the image (smaller, nothing secret, better cache).
+.git
+.github
+.venv
+venv
+**/__pycache__
+**/.pytest_cache
+.mypy_cache
+.ruff_cache
+reports
+archive
+build
+docker
+*.md

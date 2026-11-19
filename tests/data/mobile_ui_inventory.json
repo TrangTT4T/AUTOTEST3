@@ -1,0 +1,1710 @@
+{
+ "_source": "saucelabs/my-demo-app-android af2c830 2026-10-29, res/layout (static extraction)",
+ "package": "com.saucelabs.mydemoapp.android",
+ "launch_activity": ".view.activities.SplashActivity",
+ "layouts": {
+  "activity_debug_crash": {
+   "cause_uncaught_exception_button": {
+    "class": "Button",
+    "content_description": null,
+    "text": "UNCAUGHT EXCEPTION"
+   },
+   "cause_native_crash_button": {
+    "class": "Button",
+    "content_description": null,
+    "text": "NATIVE CRASH"
+   },
+   "stop_and_resume_session_button": {
+    "class": "Button",
+    "content_description": null,
+    "text": "STOP AND RESUME SESSION (DEBUG)"
+   }
+  },
+  "activity_debug_feedback": {
+   "yes_screenshot_report_button": {
+    "class": "Button",
+    "content_description": null,
+    "text": "Report a bug"
+   },
+   "no_screenshot_report_button": {
+    "class": "Button",
+    "content_description": null,
+    "text": "Report a bug"
+   },
+   "stop_report_button": {
+    "class": "Button",
+    "content_description": null,
+    "text": "Report a bug"
+   },
+   "custom_fields_report_button": {
+    "class": "Button",
+    "content_description": null,
+    "text": "Report a bug"
+   },
+   "custom_fields_report_button_with_session": {
+    "class": "Button",
+    "content_description": null,
+    "text": "Report a bug"
+   },
+   "custom_activity_report_button_with_session": {
+    "class": "Button",
+    "content_description": null,
+    "text": "Report a bug"
+   }
+  },
+  "activity_main": {
+   "container": {
+    "class": "DrawerLayout",
+    "content_description": null,
+    "text": null
+   },
+   "header": {
+    "class": "include",
+    "content_description": null,
+    "text": null
+   },
+   "fragment_container": {
+    "class": "FrameLayout",
+    "content_description": "Container for fragments",
+    "text": null
+   },
+   "drawerMenu": {
+    "class": "include",
+    "content_description": null,
+    "text": null
+   }
+  },
+  "activity_splash": {
+   "splashIV": {
+    "class": "ImageView",
+    "content_description": "App logo and name",
+    "text": null
+   }
+  },
+  "activity_virtual_usb": {
+   "virtual_usb_message": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "DUCK DUCK"
+   }
+  },
+  "dialog_review": {
+   "sortTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Thank you for submitting your review!"
+   },
+   "closeBt": {
+    "class": "Button",
+    "content_description": "Closes review dialog",
+    "text": "Continue"
+   }
+  },
+  "fragment_about": {
+   "aboutTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "About"
+   },
+   "titleIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "versionTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "V.1.0.0-build 1 by"
+   },
+   "teamIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "webTV": {
+    "class": "TextView",
+    "content_description": "Tap to view content of given url",
+    "text": "<u>Go to the Sauce Labs website.</u>"
+   }
+  },
+  "fragment_biometric": {
+   "bioMetricTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "FingerPrint"
+   },
+   "bioMetricSw": {
+    "class": "Switch",
+    "content_description": "Enable or disable biometric login",
+    "text": "Allow login with FingerPrint"
+   },
+   "bioMetricInfoTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "If your device supports FingerPrint you can enable it here. This will help you to easily log in."
+   },
+   "bioMetricDemoInfoTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Normally this screen would be behind a secure login, but for demo purposes this screen has been put in the menu by default."
+   }
+  },
+  "fragment_cart": {
+   "noItemCL": {
+    "class": "ConstraintLayout",
+    "content_description": null,
+    "text": null
+   },
+   "noItemTitleTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "No Items"
+   },
+   "cartInfoLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "shoppingBt": {
+    "class": "Button",
+    "content_description": null,
+    "text": "Go Shopping"
+   },
+   "cartCL": {
+    "class": "ConstraintLayout",
+    "content_description": null,
+    "text": null
+   },
+   "scrollView": {
+    "class": "NestedScrollView",
+    "content_description": "Manages scrolling of views in given screen",
+    "text": null
+   },
+   "productTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "My Cart"
+   },
+   "productRV": {
+    "class": "RecyclerView",
+    "content_description": "Displays list of selected products",
+    "text": null
+   },
+   "socialLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "twitterIV": {
+    "class": "ImageView",
+    "content_description": "Twitter",
+    "text": null
+   },
+   "FacebookIV": {
+    "class": "ImageView",
+    "content_description": "Facebook",
+    "text": null
+   },
+   "LinkedInIV": {
+    "class": "ImageView",
+    "content_description": "LinkedIn",
+    "text": null
+   },
+   "bottomCV": {
+    "class": "CardView",
+    "content_description": null,
+    "text": null
+   },
+   "bottomLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "itemsTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "26 items"
+   },
+   "totalPriceTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "$110"
+   },
+   "cartBt": {
+    "class": "Button",
+    "content_description": "Confirms products for checkout",
+    "text": "Proceed To Checkout"
+   },
+   "leftGuideline": {
+    "class": "Guideline",
+    "content_description": null,
+    "text": null
+   },
+   "rightGuideline": {
+    "class": "Guideline",
+    "content_description": null,
+    "text": null
+   }
+  },
+  "fragment_checkout": {
+   "checkoutSV": {
+    "class": "NestedScrollView",
+    "content_description": "Manages scrolling of views in given screen",
+    "text": null
+   },
+   "enterPaymentTitleTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Checkout"
+   },
+   "enterPaymentMethodTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Enter a payment method"
+   },
+   "paymentDetailsTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "You will not be charged until you review your purchase on the next screen."
+   },
+   "cardTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Card"
+   },
+   "mastercardIV": {
+    "class": "ImageView",
+    "content_description": "Mastercard",
+    "text": null
+   },
+   "visaIV": {
+    "class": "ImageView",
+    "content_description": "Visa card",
+    "text": null
+   },
+   "itemV": {
+    "class": "View",
+    "content_description": null,
+    "text": null
+   },
+   "nameTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Full Name*"
+   },
+   "nameRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "nameET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "nameErrorIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "nameErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Value looks invalid."
+   },
+   "cardNumberTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Card Number*"
+   },
+   "cardNumberRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "cardNumberET": {
+    "class": "CreditCardNumberEditText",
+    "content_description": null,
+    "text": null
+   },
+   "cardNumberErrorIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "cardNumberErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Value looks invalid."
+   },
+   "expirationDateTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Expiration Date*"
+   },
+   "expirationDateRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "expirationDateET": {
+    "class": "CreditCardDateEditText",
+    "content_description": null,
+    "text": null
+   },
+   "expirationDateIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "expirationDateErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Value looks invalid."
+   },
+   "securityCodeTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Security Code*"
+   },
+   "questionIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "securityCodeRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "securityCodeET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "securityCodeIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "securityCodeErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Value looks invalid."
+   },
+   "billingAddressCB": {
+    "class": "CheckBox",
+    "content_description": "Select if User billing address and shipping address are same",
+    "text": "My billing address is the same as my shipping address."
+   },
+   "checkoutInfoCL": {
+    "class": "ConstraintLayout",
+    "content_description": null,
+    "text": null
+   },
+   "fullNameTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Full Name*"
+   },
+   "fullNameRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "fullNameET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "fullNameErrorIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "fullNameErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Please provide your full name."
+   },
+   "address1TV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Address Line 1*"
+   },
+   "address1RL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "address1ET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "address1ErrorIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "address1ErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Please provide your address."
+   },
+   "address2TV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Address Line 2"
+   },
+   "address2RL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "address2ET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "address2ErrorIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "address2ErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": ""
+   },
+   "cityTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "City*"
+   },
+   "cityRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "cityET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "cityIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "cityErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Please provide your city."
+   },
+   "stateTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "State/Region"
+   },
+   "stateRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "stateET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "stateIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "stateErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": ""
+   },
+   "zipTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Zip Code*"
+   },
+   "zipRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "zipET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "zipIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "zipErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Please provide your zip"
+   },
+   "countryTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Country*"
+   },
+   "countryRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "countryET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "countryIV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "countryErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Please provide your"
+   },
+   "paymentCV": {
+    "class": "CardView",
+    "content_description": null,
+    "text": null
+   },
+   "paymentBtn": {
+    "class": "Button",
+    "content_description": "Saves payment info and launches screen to review checkout data",
+    "text": "Review Order"
+   }
+  },
+  "fragment_checkout_complete": {
+   "completeTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Checkout Complete"
+   },
+   "thankYouTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Thank you for your order"
+   },
+   "swagTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Your new swag is on its way"
+   },
+   "orderTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Your order has been dispatched and will arrive as fast as the pony gallops!"
+   },
+   "shoopingBt": {
+    "class": "Button",
+    "content_description": "Tap to open catalog",
+    "text": "Continue Shopping"
+   },
+   "leftGuideline": {
+    "class": "Guideline",
+    "content_description": null,
+    "text": null
+   },
+   "rightGuideline": {
+    "class": "Guideline",
+    "content_description": null,
+    "text": null
+   }
+  },
+  "fragment_checkout_info": {
+   "checkoutSV": {
+    "class": "NestedScrollView",
+    "content_description": "Manages scrolling of views in given screen",
+    "text": null
+   },
+   "checkoutTitleTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Checkout"
+   },
+   "enterShippingAddressTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Enter a shipping address"
+   },
+   "fullNameTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Full Name*"
+   },
+   "fullNameRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "fullNameET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "fullNameErrorIV": {
+    "class": "ImageView",
+    "content_description": "Indicates error",
+    "text": null
+   },
+   "fullNameErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Please provide your full name."
+   },
+   "address1TV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Address Line 1*"
+   },
+   "address1RL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "address1ET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "address1ErrorIV": {
+    "class": "ImageView",
+    "content_description": "Indicates error",
+    "text": null
+   },
+   "address1ErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Please provide your address."
+   },
+   "address2TV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Address Line 2"
+   },
+   "address2RL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "address2ET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "address2ErrorIV": {
+    "class": "ImageView",
+    "content_description": "Indicates error",
+    "text": null
+   },
+   "address2ErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": ""
+   },
+   "cityTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "City*"
+   },
+   "cityRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "cityET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "cityIV": {
+    "class": "ImageView",
+    "content_description": "Indicates error",
+    "text": null
+   },
+   "cityErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Please provide your city."
+   },
+   "zipTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Zip Code*"
+   },
+   "zipRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "zipET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "zipIV": {
+    "class": "ImageView",
+    "content_description": "Indicates error",
+    "text": null
+   },
+   "zipErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Please provide your zip"
+   },
+   "stateTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "State/Region"
+   },
+   "stateRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "stateET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "stateIV": {
+    "class": "ImageView",
+    "content_description": "Indicates error",
+    "text": null
+   },
+   "stateErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": ""
+   },
+   "countryTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Country*"
+   },
+   "countryRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "countryET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "countryIV": {
+    "class": "ImageView",
+    "content_description": "Indicates error",
+    "text": null
+   },
+   "countryErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Please provide your"
+   },
+   "paymentCV": {
+    "class": "CardView",
+    "content_description": null,
+    "text": null
+   },
+   "paymentBtn": {
+    "class": "Button",
+    "content_description": "Saves user info for checkout",
+    "text": "To Payment"
+   }
+  },
+  "fragment_drawing": {
+   "drawingTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Drawing"
+   },
+   "padBackgroundIV": {
+    "class": "ImageView",
+    "content_description": "Background for drawing pad",
+    "text": null
+   },
+   "signature_pad": {
+    "class": "SignaturePad",
+    "content_description": "Pad to draw on",
+    "text": null
+   },
+   "buttonsLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "clearBtn": {
+    "class": "Button",
+    "content_description": "Removes anything drawn on pad",
+    "text": "Clear"
+   },
+   "saveBtn": {
+    "class": "Button",
+    "content_description": "Save anything drawn on pad",
+    "text": "Save"
+   }
+  },
+  "fragment_location": {
+   "locationTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Geo Location"
+   },
+   "locationDetailsTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Below you will find the latitude and longitude. This screen will automatically start with observing the location. You can manually disable/enable  it by clicking on the buttons. It will automatically stop observing the location when you leave the screen."
+   },
+   "linkTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "You can use Appium to change them with"
+   },
+   "linkedTV": {
+    "class": "TextView",
+    "content_description": "Tap to visit given web address",
+    "text": "<u>this link.</u>"
+   },
+   "extraTextTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Determining the position on Android can take a while."
+   },
+   "lineV": {
+    "class": "View",
+    "content_description": null,
+    "text": null
+   },
+   "latlongLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "latitudeTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "longitudeTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "line2V": {
+    "class": "View",
+    "content_description": null,
+    "text": null
+   },
+   "buttonLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "startBtn": {
+    "class": "Button",
+    "content_description": "Start observation of user location",
+    "text": "Start Observing"
+   },
+   "stopBtn": {
+    "class": "Button",
+    "content_description": "Stop observation of user location",
+    "text": "Stop Observing"
+   }
+  },
+  "fragment_login": {
+   "loginTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Login"
+   },
+   "selectTextTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Select a username and password from the list below, or click on the username to automatically populate the username and password."
+   },
+   "usernameTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Username"
+   },
+   "nameRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "nameET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "usernameErrorIV": {
+    "class": "ImageView",
+    "content_description": "Indicates error",
+    "text": null
+   },
+   "nameErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Username is required"
+   },
+   "passwordTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Password"
+   },
+   "passwordRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "passwordET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "passwordErrorIV": {
+    "class": "ImageView",
+    "content_description": "Indicates error",
+    "text": null
+   },
+   "passwordErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Password is required"
+   },
+   "buttonLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "bioMetricIB": {
+    "class": "ImageButton",
+    "content_description": "Tap to login using biometric verification",
+    "text": null
+   },
+   "loginBtn": {
+    "class": "Button",
+    "content_description": "Tap to login with given credentials",
+    "text": "Login"
+   },
+   "savedNamesTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Usernames"
+   },
+   "savedPasswordTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Password"
+   },
+   "username1TV": {
+    "class": "TextView",
+    "content_description": "Tap to use this username for login",
+    "text": "<u>bod@example.com</u>"
+   },
+   "password1TV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "10203040"
+   },
+   "username2TV": {
+    "class": "TextView",
+    "content_description": "Tap to use this username for login",
+    "text": "<u>alice@example.com (locked out)</u>"
+   },
+   "password2TV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "username3TV": {
+    "class": "TextView",
+    "content_description": "Visual User Login",
+    "text": "<u>visual@example.com</u>"
+   },
+   "password3TV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   }
+  },
+  "fragment_place_order": {
+   "checkoutSV": {
+    "class": "NestedScrollView",
+    "content_description": "Manages scrolling of views in given screen",
+    "text": null
+   },
+   "checkoutTitleTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Checkout"
+   },
+   "enterShippingAddressTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Review your order"
+   },
+   "placeOrderRV": {
+    "class": "RecyclerView",
+    "content_description": "Displays list of selected products",
+    "text": null
+   },
+   "itemV": {
+    "class": "View",
+    "content_description": null,
+    "text": null
+   },
+   "addressLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "fullNameTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "addressTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "cityTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "countryTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "billingLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "cardHolderTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "cardNumberTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "expirationDateTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "billingAddressTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Billing address is the same as shipping address"
+   },
+   "billingAddressLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "billFullnameTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "billaddressTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "billingCityAndStateTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "billingZipAndCountryTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Billing address is the same as shipping address"
+   },
+   "item2V": {
+    "class": "View",
+    "content_description": null,
+    "text": null
+   },
+   "dhlTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "DHL Standard Delivery"
+   },
+   "amountTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "$5.99"
+   },
+   "arrivalTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Estimated to arrive within 3 weeks."
+   },
+   "socialLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "twitterIV": {
+    "class": "ImageView",
+    "content_description": "Twitter",
+    "text": null
+   },
+   "FacebookIV": {
+    "class": "ImageView",
+    "content_description": "Facebook",
+    "text": null
+   },
+   "LinkedInIV": {
+    "class": "ImageView",
+    "content_description": "LinkedIn",
+    "text": null
+   },
+   "paymentCV": {
+    "class": "CardView",
+    "content_description": null,
+    "text": null
+   },
+   "totalLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "totalTextTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Total:"
+   },
+   "itemNumberTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": ""
+   },
+   "totalAmountTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": ""
+   },
+   "paymentBtn": {
+    "class": "Button",
+    "content_description": "Completes the process of checkout",
+    "text": "Place Order"
+   }
+  },
+  "fragment_product_catalog": {
+   "productTV": {
+    "class": "TextView",
+    "content_description": "title",
+    "text": "Products"
+   },
+   "scrollView": {
+    "class": "NestedScrollView",
+    "content_description": "Scrollview manages views in given screen size",
+    "text": null
+   },
+   "productRV": {
+    "class": "RecyclerView",
+    "content_description": "Displays all products of catalog",
+    "text": null
+   },
+   "socialLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "twitterIV": {
+    "class": "ImageView",
+    "content_description": "Twitter",
+    "text": null
+   },
+   "FacebookIV": {
+    "class": "ImageView",
+    "content_description": "Facebook",
+    "text": null
+   },
+   "LinkedInIV": {
+    "class": "ImageView",
+    "content_description": "LinkedIn",
+    "text": null
+   },
+   "leftGuideline": {
+    "class": "Guideline",
+    "content_description": null,
+    "text": null
+   },
+   "rightGuideline": {
+    "class": "Guideline",
+    "content_description": null,
+    "text": null
+   }
+  },
+  "fragment_product_detail": {
+   "productTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Products"
+   },
+   "productIV": {
+    "class": "ImageView",
+    "content_description": "Displays selected product",
+    "text": null
+   },
+   "rattingLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "priceTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "$29.21"
+   },
+   "rattingV": {
+    "class": "include",
+    "content_description": "Shows rating of product",
+    "text": null
+   },
+   "colorRV": {
+    "class": "RecyclerView",
+    "content_description": "Displays available colors of selected product",
+    "text": null
+   },
+   "addToCartLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "minusIV": {
+    "class": "ImageView",
+    "content_description": "Decrease item quantity",
+    "text": null
+   },
+   "noTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "1"
+   },
+   "plusIV": {
+    "class": "ImageView",
+    "content_description": "Increase item quantity",
+    "text": null
+   },
+   "cartBt": {
+    "class": "Button",
+    "content_description": "Tap to add product to cart",
+    "text": "Add to cart"
+   },
+   "productHeightLightsTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Product Highlights"
+   },
+   "descTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "The Sauce Labs Backpack is the best of all worlds - infinite capacity and endless style. Fits in comfortably a laptop up to 15 inch. Never leave a thing behind and forget you have your world on your shoulders."
+   },
+   "leftGuideline": {
+    "class": "Guideline",
+    "content_description": null,
+    "text": null
+   },
+   "rightGuideline": {
+    "class": "Guideline",
+    "content_description": null,
+    "text": null
+   }
+  },
+  "fragment_qr": {
+   "qrCodeTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "QR Code Scanner"
+   },
+   "previewView": {
+    "class": "PreviewView",
+    "content_description": null,
+    "text": null
+   },
+   "view": {
+    "class": "View",
+    "content_description": null,
+    "text": null
+   },
+   "leftGuideline": {
+    "class": "Guideline",
+    "content_description": null,
+    "text": null
+   },
+   "rightGuideline": {
+    "class": "Guideline",
+    "content_description": null,
+    "text": null
+   }
+  },
+  "fragment_web_address": {
+   "webViewTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Webview"
+   },
+   "urlTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "URL"
+   },
+   "urlRL": {
+    "class": "RelativeLayout",
+    "content_description": null,
+    "text": null
+   },
+   "urlET": {
+    "class": "EditText",
+    "content_description": null,
+    "text": null
+   },
+   "urlErrorIV": {
+    "class": "ImageView",
+    "content_description": "Indicates error",
+    "text": null
+   },
+   "urlErrorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Please provide a correct https url."
+   },
+   "enterTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Enter an HTTPS url"
+   },
+   "goBtn": {
+    "class": "Button",
+    "content_description": "Tap to view content of given url",
+    "text": "Go To Site"
+   }
+  },
+  "fragment_web_view": {
+   "loadingIV": {
+    "class": "ImageView",
+    "content_description": "App logo",
+    "text": null
+   },
+   "loadingTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Loading ..."
+   },
+   "webView": {
+    "class": "WebView",
+    "content_description": null,
+    "text": null
+   },
+   "errorCL": {
+    "class": "ConstraintLayout",
+    "content_description": null,
+    "text": null
+   },
+   "errorTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Error Loading Page"
+   },
+   "domainTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Domain: Undefined"
+   },
+   "errorCodeTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "errorNameTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   }
+  },
+  "item_color": {
+   "aroundIV": {
+    "class": "ImageView",
+    "content_description": "Indicates when color is selected",
+    "text": null
+   },
+   "colorIV": {
+    "class": "ImageView",
+    "content_description": "Displays color of product",
+    "text": null
+   }
+  },
+  "item_my_cart": {
+   "productIV": {
+    "class": "ImageView",
+    "content_description": "Displays selected product",
+    "text": null
+   },
+   "infoCL": {
+    "class": "ConstraintLayout",
+    "content_description": null,
+    "text": null
+   },
+   "titleTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Product 1"
+   },
+   "priceTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "$29.21"
+   },
+   "rattingV": {
+    "class": "include",
+    "content_description": "Shows rating of product",
+    "text": null
+   },
+   "colorTitleTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Color:"
+   },
+   "colorIV": {
+    "class": "ImageView",
+    "content_description": "Displays color of selected product",
+    "text": null
+   },
+   "addToCartLL": {
+    "class": "LinearLayout",
+    "content_description": null,
+    "text": null
+   },
+   "minusIV": {
+    "class": "ImageView",
+    "content_description": "Decrease item quantity",
+    "text": null
+   },
+   "noTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "1"
+   },
+   "plusIV": {
+    "class": "ImageView",
+    "content_description": "Increase item quantity",
+    "text": null
+   },
+   "removeBt": {
+    "class": "TextView",
+    "content_description": "Removes product from cart",
+    "text": "Remove Item"
+   }
+  },
+  "item_products": {
+   "productIV": {
+    "class": "ImageView",
+    "content_description": "Displays selected product",
+    "text": null
+   },
+   "titleTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Product 1"
+   },
+   "priceTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "$29.21"
+   },
+   "rattingV": {
+    "class": "include",
+    "content_description": "Shows rating of product",
+    "text": null
+   }
+  },
+  "menu_header_layout": {
+   "headerCL": {
+    "class": "ConstraintLayout",
+    "content_description": null,
+    "text": null
+   },
+   "menuIV": {
+    "class": "ImageView",
+    "content_description": "View menu",
+    "text": null
+   },
+   "sortIV": {
+    "class": "ImageView",
+    "content_description": "Shows current sorting order and displays available sorting options",
+    "text": null
+   },
+   "cartRL": {
+    "class": "RelativeLayout",
+    "content_description": "View cart",
+    "text": null
+   },
+   "cartIV": {
+    "class": "ImageView",
+    "content_description": "Displays number of items in your cart",
+    "text": null
+   },
+   "cartCircleRL": {
+    "class": "RelativeLayout",
+    "content_description": "Displays number of items in your cart",
+    "text": null
+   },
+   "cartTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "12"
+   },
+   "mTvTitle": {
+    "class": "ImageView",
+    "content_description": "App logo and name",
+    "text": null
+   }
+  },
+  "menu_item": {
+   "topViewTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": null
+   },
+   "itemTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Catalog"
+   },
+   "itemV": {
+    "class": "View",
+    "content_description": null,
+    "text": null
+   }
+  },
+  "navigation_layout": {
+   "menuRV": {
+    "class": "RecyclerView",
+    "content_description": "Recycler view for menu",
+    "text": null
+   }
+  },
+  "ratting_layout": {
+   "start1IV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "start2IV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "start3IV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "start4IV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   },
+   "start5IV": {
+    "class": "ImageView",
+    "content_description": null,
+    "text": null
+   }
+  },
+  "sort_dialog": {
+   "sortTV": {
+    "class": "TextView",
+    "content_description": null,
+    "text": "Sort by:"
+   },
+   "nameAscCL": {
+    "class": "ConstraintLayout",
+    "content_description": "Ascending order by name",
+    "text": null
+   },
+   "tickNameAscIV": {
+    "class": "ImageView",
+    "content_description": "Shows which sorting order is selected",
+    "text": null
+   },
+   "menuNameAscIV": {
+    "class": "ImageView",
+    "content_description": "Displays ascending sorting order by name",
+    "text": null
+   },
+   "nameDesCL": {
+    "class": "ConstraintLayout",
+    "content_description": "Descending order by name",
+    "text": null
+   },
+   "tickNameDesIV": {
+    "class": "ImageView",
+    "content_description": "Shows which sorting order is selected",
+    "text": null
+   },
+   "menuNameDesIV": {
+    "class": "ImageView",
+    "content_description": "Displays descending sorting order by name",
+    "text": null
+   },
+   "priceAscCL": {
+    "class": "ConstraintLayout",
+    "content_description": "Ascending order by price",
+    "text": null
+   },
+   "tickPriceAscIV": {
+    "class": "ImageView",
+    "content_description": "Shows which sorting order is selected",
+    "text": null
+   },
+   "menuPriceAscIV": {
+    "class": "ImageView",
+    "content_description": "Displays ascending sorting order by price",
+    "text": null
+   },
+   "priceDesCL": {
+    "class": "ConstraintLayout",
+    "content_description": "Descending order by price",
+    "text": null
+   },
+   "tickPriceDscIV": {
+    "class": "ImageView",
+    "content_description": "Shows which sorting order is selected",
+    "text": null
+   },
+   "menuPriceDscIV": {
+    "class": "ImageView",
+    "content_description": "Displays descending sorting order by price",
+    "text": null
+   }
+  }
+ }
+}

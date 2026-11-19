@@ -1,0 +1,32 @@
+# Performance objectives, checked by: python -m framework.perf.gate <results.jtl> --profile <name>
+# (Unit 4, Days 14 and 16). Values are agreed numbers, not guesses: write down where each comes from.
+
+[defaults]
+min_samples = 20      # fewer samples than this proves nothing: the gate FAILS
+max_error_pct = 1.0
+
+# Local order-events sandbox (perf/orders_sandbox.jmx), CI smoke: 5 users, 30 s.
+[sandbox."POST /orders"]
+p95_ms = 200          # the front door only accepts: it must stay fast at any load
+max_error_pct = 0.0
+
+[sandbox."TX order completed"]
+p95_ms = 2000         # = REQ-13 consistency target (2 s from order to "shipped")
+max_error_pct = 0.0
+
+# BlazeDemo (perf/blazedemo_purchase.jmx), light load only (<= 10 users).
+[blazedemo."01 Home"]
+p95_ms = 1500
+min_samples = 10
+
+[blazedemo."02 Find flights"]
+p95_ms = 1500
+min_samples = 10
+
+[blazedemo."03 Choose flight"]
+p95_ms = 1500
+min_samples = 10
+
+[blazedemo."04 Purchase"]
+p95_ms = 2000
+min_samples = 10

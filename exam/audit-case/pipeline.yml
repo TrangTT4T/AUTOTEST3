@@ -1,0 +1,31 @@
+# EXAM CASE (Unit 4, Day 18) - the team's CI pipeline. Deliberately flawed: audit it.
+name: qa-platform
+
+on:
+  pull_request_target:
+  schedule:
+    - cron: "0 * * * *"
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+      - name: Push image
+        run: |
+          docker build -t qa-runner .
+          docker tag qa-runner "$ECR/qa-runner:latest"
+          docker push "$ECR/qa-runner:latest"
+      - name: Start the regression
+        run: aws ecs run-task --cluster qa --task-definition qa-runner --launch-type FARGATE || true
+      - name: Performance check on production
+        run: jmeter -n -t load.jmx -Jusers=500 -Jhost=shop.example.com -l results.jtl
+      - name: Publish
+        run: echo "Regression started - see the dashboard"

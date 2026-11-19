@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  AWS Device Farm project and device pool for the My Demo App Appium tests (Unit 4 reference
+  design, NOT deployed by the course). Device Farm runs in us-west-2: deploy this stack there.
+
+Metadata:
+  cfn-lint:
+    config:
+      regions: [us-west-2] # Device Farm exists only there; cfn-lint checks the types against this region
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: shop-bdd-mobile
+  MaxDevices:
+    Type: Number
+    Default: 2
+    MinValue: 1
+    MaxValue: 5
+    Description: Each device runs the whole suite; minutes are billed per device.
+
+Resources:
+  Project:
+    Type: AWS::DeviceFarm::Project
+    Properties:
+      Name: !Ref ProjectName
+      DefaultJobTimeoutMinutes: 20 # a hung run costs at most 20 minutes per device
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+
+  AndroidPhones:
+    Type: AWS::DeviceFarm::DevicePool
+    Properties:
+      Name: android-phones-recent
+      Description: Highly available Android phones, OS 13 or newer
+      ProjectArn: !Ref Project
+      MaxDevices: !Ref MaxDevices
+      Rules:
+        - Attribute: PLATFORM
+          Operator: EQUALS
+          Value: '"ANDROID"'
+        - Attribute: FORM_FACTOR
+          Operator: EQUALS
+          Value: '"PHONE"'
+        - Attribute: OS_VERSION
+          Operator: GREATER_THAN_OR_EQUALS
+          Value: '"13"'
+        - Attribute: AVAILABILITY
+          Operator: EQUALS
+          Value: '"HIGHLY_AVAILABLE"'
+
+Outputs:
+  ProjectArn:
+    Value: !Ref Project
+  DevicePoolArn:
+    Value: !Ref AndroidPhones

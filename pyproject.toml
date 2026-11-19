@@ -1,0 +1,119 @@
+# Tool configuration only: this project is a test suite, not an installable package.
+# Dependencies are pinned in requirements.txt / requirements-dev.txt.
+
+[tool.pytest.ini_options]
+minversion = "8.3"
+testpaths = ["tests"]
+pythonpath = ["."]
+bdd_features_base_dir = "features"
+base_url = "https://sauce-demo.myshopify.com"
+requirements_registry = "requirements.toml"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+    "--screenshot=only-on-failure",
+    "--tracing=retain-on-failure",
+    "--output=reports/artifacts",
+]
+markers = [
+    "web: runs in a browser",
+    "api: runs against JSON endpoints",
+    "mobile: runs on a phone or emulator",
+    "events: runs against the local asynchronous order-events sandbox",
+    "known_defect(id): detects a registered defect (framework/events/findings.py); strict xfail where present",
+    "smoke: fast critical checks, run on every change",
+    "regression: full suite, run nightly",
+    "manual: not automated, documented gap",
+    "e2e: end-to-end Playwright workflow test (Unit 2)",
+    "p1: workflow priority 1 - run on every change",
+    "p2: workflow priority 2 - run nightly",
+    "p3: workflow priority 3 - run nightly",
+    "risk-high: risk score 15-25",
+    "risk-medium: risk score 8-14",
+    "risk-low: risk score 1-7",
+]
+log_level = "INFO"
+log_format = "%(asctime)s %(levelname)-5s %(name)s: %(message)s"
+log_date_format = "%H:%M:%S"
+filterwarnings = [
+    "error",
+    # pytest-base-url (installed with pytest-playwright) uses a pattern pytest 9 deprecates.
+    "ignore:Session-scoped fixtures defined as instance methods are deprecated:DeprecationWarning",
+    "ignore::pytest.PytestRemovedIn10Warning:_pytest.fixtures",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = ["docs"]  # course guides: their code blocks are illustrations, not project code
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W", "I", "B", "UP", "SIM", "PT", "RUF", "N", "C4", "PL",
+    "S",     # security (bandit)
+    "BLE",   # no blind `except Exception` without a written reason
+    "ARG",   # unused arguments
+    "TRY",   # exception handling
+    "PERF",  # performance anti-patterns
+    "PTH",   # pathlib
+    "T20",   # no stray print()
+    "FBT",   # no boolean positional parameters
+    "ISC",   # implicit string concatenation
+    "C90",   # cyclomatic complexity (max 10)
+]
+ignore = [
+    "PLR2004",  # magic values in assertions are the expected values
+    "PLR0913",  # pytest-bdd hooks have fixed, long signatures
+    "E741",     # 'l' in a one-line comprehension is fine
+    "TRY003",   # exception messages ARE the diagnosis in a test framework: they stay specific
+]
+
+[tool.ruff.lint.per-file-ignores]
+# pytest and pytest-bdd call hooks with fixed signatures, used or not.
+"framework/plugins/**" = ["PLR0917", "ARG001"]
+# assert is how pytest tests check; parametrized tests take booleans; test data has fake secrets.
+"tests/**" = ["S101", "S105", "S106", "FBT001", "FBT002"]
+# Locator constants are named after fields ("_password"), not secrets.
+"framework/adapters/web/pages/**" = ["S105"]
+"framework/adapters/mobile/screens/**" = ["S105"]
+# Command-line tools print their results.
+"framework/perf/gate.py" = ["T201"]
+"framework/perf/correlate.py" = ["T201"]
+"framework/cloud/audit.py" = ["T201"]
+"framework/cloud/run_suite.py" = ["T201"]
+"framework/review.py" = ["T201"]
+"sandbox/__main__.py" = ["T201"]
+"tools/**" = ["T201"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["framework", "tests", "sandbox"]
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["boto3", "boto3.*", "botocore.*", "moto", "moto.*"]  # untyped; used at the edges only
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["parse"]  # the parse library (used by pytest-bdd) ships no type information
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["framework"]
+# Code that only runs with a browser (live runs) or a device (mobile runs) is exercised there,
+# not by the offline gate; the sandbox is the system under test and runs in its own process.
+omit = [
+    "framework/adapters/web/*",
+    "framework/adapters/mobile/screens/*",
+    "framework/adapters/mobile/session.py",
+    "framework/adapters/mobile/evidence.py",
+    "framework/adapters/mobile/store.py",
+    "framework/plugins/mobile.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 90  # a ratchet: measured 92 % when introduced; raise it, never lower it

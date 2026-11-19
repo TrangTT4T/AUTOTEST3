@@ -1,0 +1,54 @@
+# AWS Device Farm custom test environment: runs the Unit 3 mobile suite (pytest + Appium) on a
+# real Android device. Reference for Unit 4 Day 16 - NOT run by the course (no AWS account).
+#
+# Upload three things to the Device Farm project:
+#   1. the app (.apk)                                  -> type ANDROID_APP
+#   2. the test package (cloud/devicefarm/build_test_package.sh) -> type APPIUM_PYTHON_TEST_PACKAGE
+#   3. this file                                       -> type APPIUM_PYTHON_TEST_SPEC
+# In a custom environment Device Farm injects no Appium capabilities: our framework builds them
+# from SHOP_* variables (framework/adapters/mobile/capabilities.py), set below from DEVICEFARM_*.
+version: 0.1
+
+android_test_host: amazon_linux_2
+
+phases:
+  install:
+    commands:
+      - devicefarm-cli use python 3.12
+      - devicefarm-cli use appium 2
+      - appium driver install uiautomator2
+      - cd $DEVICEFARM_TEST_PACKAGE_PATH
+      - python -m venv $DEVICEFARM_TEST_PACKAGE_PATH/venv
+      - . $DEVICEFARM_TEST_PACKAGE_PATH/venv/bin/activate
+      # Offline install from the wheels packed with the tests: no PyPI access needed on the host.
+      - pip install --no-index --find-links=./wheelhouse -r requirements.txt
+
+  pre_test:
+    commands:
+      - appium --log-timestamp --log-no-colors --relaxed-security >> $DEVICEFARM_LOG_DIR/appium.log 2>&1 &
+      # Wait for the server, with a deadline (the Unit 3 rule: wait for a condition, never a fixed time).
+      - |
+        for i in $(seq 1 30); do
+          curl -s http://127.0.0.1:4723/status | grep -q '"ready":true' && break
+          sleep 1
+        done
+        curl -s http://127.0.0.1:4723/status | grep -q '"ready":true'
+
+  test:
+    commands:
+      - cd $DEVICEFARM_TEST_PACKAGE_PATH && . venv/bin/activate
+      - export SHOP_APPIUM_URL=http://127.0.0.1:4723
+      - export SHOP_ANDROID_APP=$DEVICEFARM_APP_PATH
+      - export SHOP_ANDROID_DEVICE="$DEVICEFARM_DEVICE_NAME"
+      - >-
+        python -m pytest --store mobile -p no:cacheprovider
+        --junitxml=$DEVICEFARM_LOG_DIR/junit.xml
+        tests/test_mobile_cart.py tests/mobile
+
+  post_test:
+    commands:
+      # Our own evidence (screenshots, page source, logcat, recordings) next to Device Farm's.
+      - cp -r $DEVICEFARM_TEST_PACKAGE_PATH/reports $DEVICEFARM_LOG_DIR/shop-bdd-reports || true
+
+artifacts:
+  - $DEVICEFARM_LOG_DIR

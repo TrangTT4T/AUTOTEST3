@@ -1,0 +1,198 @@
+"""Architecture fitness tests: the layer rules from the README, checked on every run.
+
+A rule that only lives in a document erodes; a rule that fails the build does not.
+"""
+
+import ast
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[2]
+SELECTOR_CALLS = {
+    "locator",
+    "get_by_role",
+    "get_by_text",
+    "get_by_label",
+    "get_by_test_id",
+    "get_by_placeholder",
+}
+# Files allowed to use locators outside pages/ and components/, with the reason.
+SELECTOR_ALLOWLIST = {
+    "framework/adapters/web/guard.py": "reads the whole <body> text to detect bot-check pages",
+}
+
+
+def _python_files(*folders: str) -> list[Path]:
+    return sorted(p for folder in folders for p in (ROOT / folder).rglob("*.py"))
+
+
+def _imports(path: Path) -> set[str]:
+    names = set()
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.Import):
+            names |= {alias.name for alias in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            names.add(node.module)
+    return names
+
+
+def _rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+@pytest.mark.parametrize("path", _python_files("tests/steps"), ids=_rel)
+def test_steps_use_only_the_port_and_the_domain(path: Path) -> None:
+    forbidden = {
+        m for m in _imports(path) if m.startswith(("playwright", "appium", "selenium", "framework.adapters"))
+    }
+    assert not forbidden, f"{_rel(path)} imports {forbidden}: steps must talk to the Store port only"
+
+
+@pytest.mark.parametrize(
+    "path",
+    [ROOT / "framework/domain.py", ROOT / "framework/ports.py", ROOT / "framework/errors.py"],
+    ids=_rel,
+)
+def test_core_does_not_depend_on_tools(path: Path) -> None:
+    forbidden = {m for m in _imports(path) if m.startswith(("playwright", "pytest", "pytest_bdd"))}
+    assert not forbidden, f"{_rel(path)} imports {forbidden}: the core must stay tool-independent"
+
+
+def test_selectors_live_only_in_pages_and_components() -> None:
+    offenders: list[str] = []
+    for path in _python_files("framework", "tests"):
+        rel = _rel(path)
+        if rel.startswith(("framework/adapters/web/pages/", "framework/adapters/web/components/")):
+            continue
+        if rel in SELECTOR_ALLOWLIST or rel.startswith("tests/unit/"):
+            continue
+        offenders.extend(
+            f"{rel}:{node.lineno} .{node.attr}(...)"
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
+            if isinstance(node, ast.Attribute) and node.attr in SELECTOR_CALLS
+        )
+    assert not offenders, "selectors outside page objects:\n" + "\n".join(offenders)
+
+
+# A bounded interval BETWEEN condition checks is the one legitimate sleep (Unit 3, Day 10).
+SLEEP_ALLOWLIST = {
+    "framework/waiting.py": "wait_until / holds_for: bounded interval between checks of a condition",
+    "framework/perf/telemetry.py": "sampling period of a telemetry collector (a clock, not a wait)",
+}
+
+
+def test_no_sleep_anywhere() -> None:
+    offenders = [
+        f"{_rel(p)}:{n.lineno}"
+        for p in _python_files("framework", "tests")
+        if _rel(p) not in SLEEP_ALLOWLIST
+        for n in ast.walk(ast.parse(p.read_text(encoding="utf-8")))
+        if isinstance(n, ast.Attribute) and n.attr in {"sleep", "wait_for_timeout"}
+    ]
+    assert not offenders, f"fixed waits found (wait for a condition instead): {offenders}"
+
+
+def test_appium_lookups_live_only_in_screen_objects() -> None:
+    offenders: list[str] = []
+    for path in _python_files("framework", "tests"):
+        rel = _rel(path)
+        if rel.startswith(("framework/adapters/mobile/screens/", "tests/unit/")):
+            continue
+        offenders.extend(
+            f"{rel}:{node.lineno} .{node.attr}(...)"
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
+            if isinstance(node, ast.Attribute) and node.attr in {"find_element", "find_elements"}
+        )
+    assert not offenders, "Appium lookups outside screen objects:\n" + "\n".join(offenders)
+
+
+def test_the_sandbox_is_a_black_box() -> None:
+    """framework/ and tests/ reach the order-events system over HTTP/WebSocket only, never by import."""
+    offenders = [
+        _rel(p)
+        for p in _python_files("framework", "tests")
+        if any(m == "sandbox" or m.startswith("sandbox.") for m in _imports(p))
+    ]
+    assert not offenders, f"importing the system under test: {offenders}"
+
+
+@pytest.mark.parametrize("path", _python_files("tests/events", "tests/steps"), ids=_rel)
+def test_events_tests_use_the_flow_not_the_wire(path: Path) -> None:
+    forbidden = {m for m in _imports(path) if m.startswith(("urllib", "websockets", "aiohttp", "http"))}
+    assert not forbidden, f"{_rel(path)} imports {forbidden}: talk to OrderFlow (framework/events)"
+
+
+def _locator_violations(path: Path) -> list[str]:
+    """Inline selectors in a page object or component: a get_by_* call, or .locator("literal")."""
+    found = []
+    label = _rel(path) if path.is_relative_to(ROOT) else path.name
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)):
+            continue
+        name = node.func.attr
+        literal = bool(node.args) and isinstance(node.args[0], ast.Constant | ast.JoinedStr)
+        if name.startswith("get_by_") or (name == "locator" and literal):
+            found.append(f"{label}:{node.lineno} .{name}(...)")
+    return found
+
+
+WEB_LOCATOR_FILES = _python_files("framework/adapters/web/pages", "framework/adapters/web/components")
+
+
+@pytest.mark.parametrize("path", WEB_LOCATOR_FILES, ids=_rel)
+def test_page_objects_declare_their_locators(path: Path) -> None:
+    """Selectors are string constants in each class's Locators section; methods use the names."""
+    offenders = _locator_violations(path)
+    assert not offenders, "declare the selector as a constant in the Locators section:\n" + "\n".join(
+        offenders
+    )
+
+
+def test_the_locator_rule_catches_inline_selectors(tmp_path: Path) -> None:
+    sample = tmp_path / "page.py"
+    sample.write_text(
+        "class P:\n"
+        "    def m(self):\n"
+        "        self.page.get_by_role('button', name='Buy').click()\n"
+        "        self.page.locator('#price')\n"
+        "        self.page.locator(f'#row-{1}')\n"
+        "        self.page.locator(self._price)\n"
+        "    _price = '#price'\n",
+        encoding="utf-8",
+    )
+    lines = [v.rsplit(":", 1)[1].split()[0] for v in _locator_violations(sample)]
+    assert sorted(lines) == ["3", "4", "5"]  # ast.walk visits nodes breadth-first
+
+
+MOBILE_LOCATOR_BUILDERS = {"Locator", "by_id", "by_accessibility_id", "by_xpath"}
+
+
+@pytest.mark.parametrize("path", _python_files("framework/adapters/mobile/screens"), ids=_rel)
+def test_screens_declare_their_locators(path: Path) -> None:
+    """Mobile locators are built only in each screen class's Locators section, never inside a method."""
+    offenders = []
+    for function in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if not isinstance(function, ast.FunctionDef):
+            continue
+        for node in ast.walk(function):
+            if isinstance(node, ast.Call):
+                name = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
+                literal = bool(node.args) and isinstance(node.args[0], ast.Constant | ast.JoinedStr)
+                if name in MOBILE_LOCATOR_BUILDERS or (name in {"find_element", "find_elements"} and literal):
+                    offenders.append(f"{_rel(path)}:{node.lineno} {name}(...) inside {function.name}()")
+    assert not offenders, "declare it in the Locators section at the bottom of the class:\n" + "\n".join(
+        offenders
+    )
+
+
+def test_page_defaults_are_set_in_one_place() -> None:
+    """Timeouts are configured by framework/plugins/fixtures.py (configure_page, _expect_timeout) only."""
+    calls = [
+        f"{_rel(path)}:{node.lineno}"
+        for path in _python_files("framework", "tests")
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
+        if isinstance(node, ast.Attribute)
+        and node.attr in {"set_default_timeout", "set_default_navigation_timeout", "set_options"}
+    ]
+    assert [c.split(":")[0] for c in calls] == ["framework/plugins/fixtures.py"] * 2, calls

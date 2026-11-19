@@ -1,0 +1,7 @@
+minute,running_tasks,task_cpu_pct,task_memory_pct,sqs_visible_messages,sqs_age_oldest_s,db_connections,db_connections_max,checkout_5xx
+0,2,35,22,0,0,40,100,0
+1,2,71,24,120,8,72,100,3
+2,2,96,25,980,41,100,100,61
+3,2,98,25,2210,95,100,100,240
+4,2,98,26,3405,152,100,100,310
+5,2,97,25,4120,201,100,100,295
