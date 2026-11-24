@@ -58,8 +58,8 @@ Selenium/Playwright grid) is the next step — the container image moves unchang
 
 | Item | Cost driver | Decision |
 |---|---|---|
-| CI minutes | 8 jobs × ~3 min per push + nightly | path filter (`mock-project/**`), `concurrency` cancels superseded runs; smoke-only on PRs is the next lever if minutes run short |
-| Image build | ~1 min per job (base image pull) | acceptable at this size; next lever: build once, push to a registry, pull by digest in the matrix |
+| CI minutes | 8 jobs × ~1.5 min per push + nightly | path filter (`mock-project/**`), `concurrency` cancels superseded runs; pull requests run `@smoke` only (standard_user 7 s instead of 31 s of tests, glitch 26 s instead of ~100 s); the full suite runs on `main`, nightly and on demand |
+| Image build | 35 s of each job | the next lever: build once, push to a registry, pull by digest in the matrix |
 | Storage | reports with traces ≈ a few MB per job | 14-day retention; 30 days for the release view |
 | People | flaky tests and unclear failures | the reliability rules above are the biggest saving |
 

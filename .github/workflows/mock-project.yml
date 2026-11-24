@@ -3,7 +3,8 @@
 #
 #   quality         lint, format, strict types, unit + plugin tests with a coverage ratchet,
 #                   requirement/finding coverage gate, workflow lint            (no browser)
-#   e2e (matrix)    build the test-runner image, run every scenario inside it   (one persona/browser each)
+#   e2e (matrix)    build the test-runner image, run the scenarios inside it   (one persona/browser each):
+#                   pull requests run @smoke only (fast feedback); main, nightly and manual runs run all
 #   quality-matrix  merge every run's traceability into requirement x run, gate on unexpected failures
 name: mock-project
 
@@ -84,6 +85,7 @@ jobs:
       PERSONA: ${{ matrix.persona }}
       BROWSER: ${{ matrix.browser }}
       DEVICE: ${{ matrix.device }}
+      SUITE: ${{ github.event_name == 'pull_request' && 'smoke' || 'all' }}
     steps:
       - uses: actions/checkout@v7
       - name: Build the test-runner image
@@ -93,6 +95,7 @@ jobs:
           mkdir -p reports
           args=(tests/test_scenarios.py -n 4 --browser "$BROWSER")
           if [ -n "$DEVICE" ]; then args+=(--device "$DEVICE"); fi
+          if [ "$SUITE" = smoke ]; then args+=(-m smoke); fi
           docker run --rm --init --ipc=host --read-only --tmpfs /tmp:exec \
             -v "$PWD/reports:/work/reports" \
             -e SWAGLABS_PERSONA="$PERSONA" \

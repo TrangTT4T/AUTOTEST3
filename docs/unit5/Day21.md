@@ -425,7 +425,7 @@ The tool exits **1** if any run has a FAIL — so the release view is itself a g
 | Practice | Line |
 |---|---|
 | least privilege | `permissions: contents: read` |
-| no wasted minutes | `concurrency: cancel-in-progress`; `paths:` filter on `mock-project/**` |
+| no wasted minutes | `concurrency: cancel-in-progress`; `paths:` filter on `mock-project/**`; pull requests run `@smoke` only (`SUITE`), the full suite runs on `main`, nightly and on demand |
 | drift detection | nightly `schedule` — the site can change without a commit of ours |
 | no injection | matrix values via `env:`; actionlint + shellcheck check every script |
 | polite load | 8 jobs × 4 workers ≤ 32 browsers for ~2 minutes; no load tests |

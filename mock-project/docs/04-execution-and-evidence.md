@@ -36,6 +36,10 @@ quality ──► e2e matrix (8 containers in parallel) ──► quality-matrix
 ```
 
 - `fail-fast: false`: one persona's result never cancels another's.
+- Pull requests run `@smoke` only (9 critical scenarios) on all 8 targets — fast feedback; `main`,
+  the nightly run and manual runs execute the full suite. The whole suite was built to run in
+  parallel from the start (fresh browser context per test, state seeded per test, no shared
+  accounts on the server side), so speed comes from parallelism, not from skipping checks.
 - `concurrency` cancels superseded runs of the same branch (no wasted minutes).
 - Nightly `schedule`: the site can change without any commit of ours — drift is found the next
   morning, not at the next unrelated change.
