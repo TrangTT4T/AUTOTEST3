@@ -11,7 +11,7 @@ from collections.abc import Callable, Sequence
 from decimal import Decimal
 from typing import Any
 
-from framework.events.client import OrdersClient
+from framework.events.client import SandboxApi
 from framework.events.model import Charge, DeadLetter, Delivery, Fault, Frame, Item, OrderView, SandboxInfo
 from framework.events.stream import StatusStream
 from framework.waiting import wait_until, wait_until_stable
@@ -20,11 +20,11 @@ DEFAULT_ITEMS = (Item("SL-BACKPACK", 2, Decimal("29.99")),)
 
 
 class OrderFlow:
-    def __init__(self, client: OrdersClient, info: SandboxInfo, correlation_id: str) -> None:
-        self.client = client
+    def __init__(self, api: SandboxApi, info: SandboxInfo, correlation_id: str) -> None:
+        self.api = api
         self.info = info
         self.correlation_id = correlation_id
-        self.stream = StatusStream(lambda since: client.ws_url(correlation_id, since))
+        self.stream = StatusStream(lambda since: api.orders.ws_url(correlation_id, since))
         self.faults: list[Fault] = []
         self.order_id: str | None = None
         self.placed_at: float | None = None
@@ -36,19 +36,19 @@ class OrderFlow:
         self.stream.connect()
 
     def inject(self, fault: Fault) -> None:
-        self.client.inject(self.correlation_id, fault)
+        self.api.admin.inject(self.correlation_id, fault)
         self.faults.append(fault)
 
     def place(self, items: Sequence[Item] = DEFAULT_ITEMS, idempotency_key: str | None = None) -> str:
         key = idempotency_key or f"{self.correlation_id}-order"
         self.placed_at = time.monotonic()
-        self.order_id, _ = self.client.place_order(self.correlation_id, items, key)
+        self.order_id, _ = self.api.orders.place_order(self.correlation_id, items, key)
         return self.order_id
 
     def publish_malformed_order(self) -> str:
         """Another producer sends an OrderPlaced the payments worker cannot price."""
         self.order_id = f"BAD-{self.correlation_id[-8:]}"
-        return self.client.publish_raw(self.correlation_id, "OrderPlaced", self.order_id, {"items": []})
+        return self.api.admin.publish_raw(self.correlation_id, "OrderPlaced", self.order_id, {"items": []})
 
     # --- waiting for outcomes ---------------------------------------------------------------
     def wait_for_status(
@@ -106,26 +106,26 @@ class OrderFlow:
     def view(self) -> OrderView | None:
         if not self.order_id:
             raise RuntimeError("no order placed in this flow: call place() first")
-        return self.client.order(self.order_id)
+        return self.api.orders.order(self.order_id)
 
     def statuses(self) -> list[str]:
         return self.stream.statuses()
 
     def charges(self) -> list[Charge]:
-        return self.client.charges(self.correlation_id)
+        return self.api.observe.charges(self.correlation_id)
 
     def deliveries(self, subscription: str | None = None, event_type: str | None = None) -> list[Delivery]:
         return [
             d
-            for d in self.client.deliveries(self.correlation_id)
+            for d in self.api.observe.deliveries(self.correlation_id)
             if subscription in (None, d.subscription) and event_type in (None, d.type)
         ]
 
     def published(self, event_type: str) -> list[dict[str, Any]]:
-        return [e for e in self.client.events(self.correlation_id) if e["type"] == event_type]
+        return [e for e in self.api.observe.events(self.correlation_id) if e["type"] == event_type]
 
     def dead_letters(self) -> list[DeadLetter]:
-        return self.client.dead_letters(self.correlation_id)
+        return self.api.observe.dead_letters(self.correlation_id)
 
     def close(self) -> None:
         self.stream.close()

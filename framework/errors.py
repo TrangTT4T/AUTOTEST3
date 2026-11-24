@@ -6,6 +6,8 @@ The type of an exception decides how a failure is reported:
 * ``DataUnavailableError``     -> the test data a scenario needs does not exist.
 * ``CartInconsistencyError``   -> a product defect: two layers of the shop disagree.
 * ``NotSupportedOnPlatformError`` -> a scenario asked a platform for a feature it does not have.
+* ``ApiRequestError``          -> an API client got a status the framework did not expect: our
+                                  request or set-up is wrong. API clients never raise AssertionError.
 * any other ``AssertionError`` -> a product defect found by a ``Then`` step.
 """
 
@@ -24,6 +26,10 @@ class DataUnavailableError(FrameworkError):
 
 class NotSupportedOnPlatformError(FrameworkError):
     """The product on this platform has no such feature (e.g. the mobile app has no search)."""
+
+
+class ApiRequestError(FrameworkError):
+    """An API call returned a status the client did not expect (a set-up or framework problem)."""
 
 
 class CartInconsistencyError(AssertionError):

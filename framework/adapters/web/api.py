@@ -12,7 +12,7 @@ from typing import Any
 from playwright.sync_api import Page
 
 from framework.domain import Cart, CartLine, Catalogue, Money, Variant
-from framework.errors import EnvironmentBlockedError
+from framework.errors import ApiRequestError, EnvironmentBlockedError
 
 _FETCH = """async ([method, path, body]) => {
     const response = await fetch(path, {
@@ -43,7 +43,9 @@ class StoreApi:
         if result["json"] is None:
             raise EnvironmentBlockedError(f"{method} {path} returned HTTP {result['status']} without JSON")
         if result["status"] >= 400:
-            raise AssertionError(f"{method} {path} failed: HTTP {result['status']} {result['json']}")
+            # Not an AssertionError: a client never asserts. The step that USES the result decides
+            # whether the product is wrong; a failed set-up call is reported as what it is.
+            raise ApiRequestError(f"{method} {path} failed: HTTP {result['status']} {result['json']}")
         return result["json"]
 
     def add_lines(self, lines: Sequence[tuple[Variant, int]]) -> None:

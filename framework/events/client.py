@@ -1,4 +1,22 @@
-"""HTTP client for the order-events system. Every read is filtered by correlation id."""
+"""HTTP clients for the order-events system: one transport, one client per domain.
+
+    BaseClient            transport only: base URL, headers (and an optional bearer token), timeout,
+                          expected statuses, error classification. No business knowledge.
+    OrdersClient          the customer-facing API: place an order, read it, the live-status URL
+    ObservabilityClient   what the system recorded: events, deliveries, payments, dead letters
+    AdminClient           test-environment control: faults, raw publishing, redrive, workers
+    SandboxApi            the three domain clients over one base URL (what fixtures hand out)
+
+Rules (checked by tests/unit/test_architecture.py):
+* a client returns typed models (``framework/events/model.py``), parsed and validated from JSON;
+* a client never asserts: an unexpected status is an ``ApiRequestError`` (our request or the
+  environment is wrong), never an ``AssertionError`` (which this project reserves for product
+  defects found by a test, and which strict xfails accept);
+* tests never build clients: fixtures do (framework/plugins/events.py).
+
+Keeping the admin endpoints in their own client means a suite pointed at a real environment can be
+given ``OrdersClient`` alone: the control endpoints are not reachable from its code at all.
+"""
 
 from __future__ import annotations
 
@@ -7,27 +25,36 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Any
 
-from framework.errors import EnvironmentBlockedError, FrameworkError
+from framework.errors import ApiRequestError, EnvironmentBlockedError
 from framework.events.model import Charge, DeadLetter, Delivery, Fault, Item, OrderView, SandboxInfo
 
 
-class SandboxRequestError(FrameworkError):
-    """The system refused a request the test framework made (a framework or test bug)."""
+class SandboxRequestError(ApiRequestError):
+    """The order-events system refused a request the test framework made (a framework or test bug)."""
 
 
-class OrdersClient:
-    def __init__(self, base_url: str, timeout: float = 5.0) -> None:
+class BaseClient:
+    """Transport shared by every domain client. Subclasses add endpoints, never transport logic."""
+
+    def __init__(self, base_url: str, *, timeout: float = 5.0, token: str | None = None) -> None:
         if urllib.parse.urlparse(base_url).scheme not in {"http", "https"}:
             raise ValueError(f"the order-events system must be an http(s) URL, got {base_url!r}")
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self._headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        if token:
+            self._headers["Authorization"] = f"Bearer {token}"
         # A local system must never be reached through a corporate or CI proxy.
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
-    # --- transport ------------------------------------------------------------------
+    def __repr__(self) -> str:  # never print the token
+        return f"{type(self).__name__}({self.base_url!r})"
+
     def _call(self, method: str, path: str, body: Any = None, **query: str) -> tuple[int, Any]:
+        """(status, parsed JSON or raw text). Only an unreachable system raises here."""
         url = f"{self.base_url}{path}"
         if query:
             url += "?" + urllib.parse.urlencode(query)
@@ -35,7 +62,7 @@ class OrdersClient:
             url,
             data=None if body is None else json.dumps(body).encode("utf-8"),
             method=method,
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            headers=self._headers,
         )
         try:
             with self._opener.open(request, timeout=self.timeout) as response:
@@ -52,12 +79,16 @@ class OrdersClient:
             ) from error
 
     def _expect(self, statuses: Iterable[int], method: str, path: str, body: Any = None, **query: str) -> Any:
+        """The parsed body when the status is one of ``statuses``; otherwise ``SandboxRequestError``."""
         status, data = self._call(method, path, body, **query)
         if status not in set(statuses):
             raise SandboxRequestError(f"{method} {path} {query or ''} -> HTTP {status}: {data}")
         return data
 
-    # --- public interface -------------------------------------------------------------
+
+class OrdersClient(BaseClient):
+    """The API a customer's app uses."""
+
     def info(self) -> SandboxInfo:
         return SandboxInfo.from_json(self._expect({200}, "GET", "/config"))
 
@@ -85,7 +116,10 @@ class OrdersClient:
         query = urllib.parse.urlencode({"correlation_id": correlation_id, "since": since})
         return f"{self.base_url.replace('http', 'ws', 1)}/ws?{query}"
 
-    # --- observability ----------------------------------------------------------------
+
+class ObservabilityClient(BaseClient):
+    """What the system recorded, filtered by correlation id (read-only)."""
+
     def events(self, correlation_id: str) -> list[dict[str, Any]]:
         return list(self._expect({200}, "GET", "/events", correlation_id=correlation_id))
 
@@ -105,7 +139,10 @@ class OrdersClient:
         """The unparsed JSON, for evidence files."""
         return self._expect({200}, "GET", path, correlation_id=correlation_id)
 
-    # --- control (test environments only) ---------------------------------------------
+
+class AdminClient(BaseClient):
+    """Control endpoints that exist only in test environments."""
+
     def inject(self, correlation_id: str, fault: Fault) -> str:
         data = self._expect({201}, "POST", "/admin/faults", fault.to_json(correlation_id))
         return str(data["fault_id"])
@@ -122,12 +159,29 @@ class OrdersClient:
         return str(self._expect({202}, "POST", "/admin/publish", body)["event_id"])
 
     def redrive(self, correlation_id: str) -> int:
-        return int(
-            self._expect({200}, "POST", "/admin/dlq/redrive", {"correlation_id": correlation_id})["redriven"]
-        )
+        data = self._expect({200}, "POST", "/admin/dlq/redrive", {"correlation_id": correlation_id})
+        return int(data["redriven"])
 
     def stop_worker(self, name: str) -> None:
         self._expect({200}, "POST", f"/admin/workers/{name}/stop", {})
 
     def start_worker(self, name: str) -> None:
         self._expect({200}, "POST", f"/admin/workers/{name}/start", {})
+
+
+@dataclass(frozen=True)
+class SandboxApi:
+    """The domain clients of one environment, built once and injected by fixtures."""
+
+    orders: OrdersClient
+    observe: ObservabilityClient
+    admin: AdminClient
+
+    @classmethod
+    def connect(cls, base_url: str, *, timeout: float = 5.0, token: str | None = None) -> SandboxApi:
+        options: dict[str, Any] = {"timeout": timeout, "token": token}
+        return cls(
+            OrdersClient(base_url, **options),
+            ObservabilityClient(base_url, **options),
+            AdminClient(base_url, **options),
+        )

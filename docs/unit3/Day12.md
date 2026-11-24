@@ -294,7 +294,7 @@ features/order_events.feature ── tests/steps/order_event_steps.py ─┐
 tests/events/*.py ──────────────────────────────────────────────────┤
                                                                      ▼
                          framework/events/flow.py   OrderFlow (one business flow)
-                           ├── client.py            HTTP (urllib, no proxy), every read filtered by correlation id
+                           ├── client.py            HTTP: BaseClient + OrdersClient / ObservabilityClient / AdminClient
                            ├── stream.py            WebSocket (websockets 17), background reader + condition variable
                            ├── oracles.py           backwards, repeated, redelivered, gaps — pure, unit-tested
                            ├── findings.py          known defects and the builds they are in
@@ -310,6 +310,45 @@ Two architecture tests guard these layers:
 - `test_the_sandbox_is_a_black_box`: nothing in `framework/` or `tests/` imports `sandbox`.
 - `test_events_tests_use_the_flow_not_the_wire`: tests and steps never import `urllib`, `websockets`, or `aiohttp`. They talk to `OrderFlow` only.
 
+### B2.1b 🟡 → 🔴 API clients: one transport, one client per domain
+
+The HTTP layer follows the **Client + Fixture + Model** pattern that API test projects use in any
+language (in Playwright TypeScript: a `BaseClient` over `APIRequestContext`, `PaymentClient`,
+`OrderClient`, fixtures that inject them, interfaces for the payloads):
+
+| Pattern | This project (Python) | Why |
+|---|---|---|
+| `BaseClient`: headers, token, response handling | `BaseClient` in `framework/events/client.py`: base URL, JSON headers, optional bearer token (from `SHOP_SANDBOX_TOKEN`, never printed), timeout, `_expect(statuses, …)` | transport written once |
+| One domain, one client | `OrdersClient` (customer API), `ObservabilityClient` (events, deliveries, payments, dead letters), `AdminClient` (faults, redrive, workers) | a suite aimed at a real environment can be given `OrdersClient` alone: the control endpoints are not even reachable from its code |
+| Models / interfaces | `framework/events/model.py`: dataclasses built by `from_json` | parsed **at run time**: a missing field fails where the response arrives |
+| Fixtures inject clients | `orders_client`, `observability_client`, `admin_client`, and `flow` (which holds a `SandboxApi`) in `framework/plugins/events.py` | tests never write `OrdersClient(url)` |
+| Utils near the domain | `OrderFlow.place()`, `wait_for_status()`, `wait_for_dead_letters()` | business steps, reused by tests and BDD steps |
+| Client has no assertions | `ApiRequestError` for an unexpected status; `assert` only in tests | see below |
+| Config not hard-coded | `--sandbox-url` / `SHOP_SANDBOX_URL`; the token only from the environment | secrets never in code, options or logs |
+
+Three architecture tests keep it that way: `test_api_clients_never_assert`,
+`test_each_api_client_serves_one_domain` (no transport code in a domain client, no endpoint of
+another domain), `test_tests_receive_clients_from_fixtures`. Each was checked by breaking the code
+on purpose.
+
+**Why "a client never asserts" matters more here than in most projects.** In this framework an
+`AssertionError` means *product defect*, and a strict known-defect xfail accepts exactly that
+type. If a client asserted on a status code, a broken set-up call (wrong URL, expired token)
+would be counted as the known defect — the run would stay green for the wrong reason. A client
+raises `ApiRequestError`; the test decides what is wrong with the product.
+
+**🔴 Reviewing a typical tutorial version.** The TypeScript pattern above is sound; its usual
+sample code has gaps a senior reviewer flags:
+
+| Sample code | Problem | Better |
+|---|---|---|
+| `return (await response.json()) as T` | `as T` is a compile-time promise only: a changed API still "type-checks" and fails later, far from the cause | validate at run time (zod/ajv schema in TypeScript, `from_json` here) |
+| `parseBody` without checking the status | an error page's JSON is parsed as a successful body | check `response.ok()` / the expected status before parsing |
+| `orderId: ORD-${Date.now()}` | two parallel workers in the same millisecond collide | `crypto.randomUUID()`; here: correlation ids per test, worker and run |
+| `waitForStatus`: fixed 1 s sleep, `Error("…not reached")` | slow when the system is fast, silent about what it saw | `expect.poll(() => …).toBe(status)` or a back-off loop that reports the last value (`framework/waiting.py`) |
+| token in `extraHTTPHeaders` from `.env` | fine — if `.env` is in `.gitignore`, and the CI secret store supplies it | never commit `.env`; mask the token in logs and traces |
+| `createPayment` returns the raw `APIResponse` | fine for negative tests (the test checks 400/422); add a typed `createAndGetId` for set-up | both: raw for status tests, typed for set-up |
+
 ### B2.2 One flow, one correlation id, subscribed before acting
 
 The `flow` fixture creates an `OrderFlow` with a unique correlation id. Its format is `T-<run>-<worker>-<test>-<hash>`, for example `T-e3684d-master-test-duplicate-payment-message-charges-o-5cc4`. The fixture also **subscribes to the live status before the test does anything** (push, not pull: Day 10, §3.4):
@@ -320,13 +359,13 @@ The `flow` fixture creates an `OrderFlow` with a unique correlation id. Its form
         self.stream.connect()
 
     def inject(self, fault: Fault) -> None:
-        self.client.inject(self.correlation_id, fault)
+        self.api.admin.inject(self.correlation_id, fault)
         self.faults.append(fault)
 
     def place(self, items: Sequence[Item] = DEFAULT_ITEMS, idempotency_key: str | None = None) -> str:
         key = idempotency_key or f"{self.correlation_id}-order"
         self.placed_at = time.monotonic()
-        self.order_id, _ = self.client.place_order(self.correlation_id, items, key)
+        self.order_id, _ = self.api.orders.place_order(self.correlation_id, items, key)
         return self.order_id
 ```
 
@@ -657,6 +696,7 @@ AWS (LO7–LO9). The project is ready for it: the order-events sandbox has the s
 
 | Check | Result |
 |---|---|
+| API layer refactor (B2.1b): BaseClient + three domain clients | Whole offline suite green (332 passed); events suite green on the fixed build; the three new architecture rules each fail on a deliberately broken copy |
 | Fresh install from `day12-code/shop-bdd.zip` (`pip install -r requirements-dev.txt`) | OK (adds `aiohttp` 3.14.5, `websockets` 17.4) |
 | `ruff check .` / `ruff format --check .` | All checks passed / 134 files already formatted |
 | `mypy` (strict, now including `sandbox/`) | No issues in 128 source files |

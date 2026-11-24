@@ -46,7 +46,7 @@ def test_failing_message_is_dead_lettered_then_redriven(flow: OrderFlow) -> None
     holds_for(flow.view, lambda v: v == view, duration=0.3)  # parked, not progressing
 
     redriven_at = time.monotonic()
-    assert flow.client.redrive(flow.correlation_id) == 1
+    assert flow.api.admin.redrive(flow.correlation_id) == 1
     flow.wait_for_status("shipped", measured_from=redriven_at)
     assert len(flow.charges()) == 1, flow.charges()
     assert flow.dead_letters() == []

@@ -45,14 +45,14 @@ def test_order_completes_once_after_a_worker_outage(flow: OrderFlow) -> None:
 
     Stops a worker for the whole sandbox: safe because each pytest worker has its own sandbox.
     """
-    flow.client.stop_worker("fulfilment")
+    flow.api.admin.stop_worker("fulfilment")
     try:
         flow.place()
         flow.wait_for_status("paid")
         holds_for(flow.statuses, lambda s: s[-1] == "paid", duration=0.5)
         restarted_at = time.monotonic()
     finally:
-        flow.client.start_worker("fulfilment")
+        flow.api.admin.start_worker("fulfilment")
     flow.wait_for_status("shipped", measured_from=restarted_at)
 
     assert flow.statuses() == ALL_STATUSES

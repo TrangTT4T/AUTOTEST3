@@ -123,6 +123,76 @@ def test_events_tests_use_the_flow_not_the_wire(path: Path) -> None:
     assert not forbidden, f"{_rel(path)} imports {forbidden}: talk to OrderFlow (framework/events)"
 
 
+API_CLIENT_FILES = [ROOT / "framework/events/client.py", ROOT / "framework/adapters/web/api.py"]
+
+
+@pytest.mark.parametrize("path", API_CLIENT_FILES, ids=_rel)
+def test_api_clients_never_assert(path: Path) -> None:
+    """A client calls the API and returns models; the TEST decides what is right (expect in the test).
+
+    An AssertionError means "product defect" in this project and is what strict xfails accept, so a
+    client raising one would turn a broken set-up call into an expected failure.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    found = [n.lineno for n in ast.walk(tree) if isinstance(n, ast.Assert)]
+    found += [
+        n.lineno
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Raise) and n.exc is not None and "AssertionError" in ast.unparse(n.exc)
+    ]
+    assert not found, f"{_rel(path)}: assertions on lines {found}; raise ApiRequestError instead"
+
+
+def test_each_api_client_serves_one_domain() -> None:
+    """One domain, one client: the transport lives in BaseClient only, endpoints in the domain clients."""
+    from framework.events import client  # noqa: PLC0415 - imported where the rule is checked
+
+    domain = {
+        "orders": client.OrdersClient,
+        "observe": client.ObservabilityClient,
+        "admin": client.AdminClient,
+    }
+    prefixes = {
+        "orders": ("/config", "/orders", "/ws"),
+        "observe": ("/events", "/deliveries", "/payments", "/dlq"),
+        "admin": ("/admin/",),
+    }
+    source = (ROOT / "framework/events/client.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    for key, cls in domain.items():
+        assert cls.__bases__ == (client.BaseClient,), f"{cls.__name__} must extend BaseClient directly"
+        node = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == cls.__name__)
+        assert not any(
+            isinstance(m, ast.FunctionDef) and m.name in {"_call", "_expect"} for m in node.body
+        ), f"{cls.__name__} re-implements the transport"
+        inside_fstrings = {id(v) for f in ast.walk(node) if isinstance(f, ast.JoinedStr) for v in f.values}
+        paths = [
+            ast.unparse(f)[2:] for f in ast.walk(node) if isinstance(f, ast.JoinedStr)
+        ]  # f'/x/{y}' -> /x/{y}
+        paths += [
+            c.value
+            for c in ast.walk(node)
+            if isinstance(c, ast.Constant) and isinstance(c.value, str) and id(c) not in inside_fstrings
+        ]
+        paths = [p for p in paths if p.startswith("/")]
+        stray = [p for p in paths if not p.startswith(prefixes[key])]
+        assert not stray, f"{cls.__name__} calls endpoints of another domain: {stray}"
+
+
+@pytest.mark.parametrize("path", _python_files("tests/events", "tests/steps"), ids=_rel)
+def test_tests_receive_clients_from_fixtures(path: Path) -> None:
+    """Tests never build a client (no `OrdersClient(url)` in a test): fixtures inject them."""
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    built = [
+        n.lineno
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Call)
+        and isinstance(n.func, ast.Name)
+        and n.func.id.endswith(("Client", "SandboxApi"))
+    ]
+    assert not built, f"{_rel(path)}: builds a client on lines {built}; use the fixtures"
+
+
 def _locator_violations(path: Path) -> list[str]:
     """Inline selectors in a page object or component: a get_by_* call, or .locator("literal")."""
     found = []

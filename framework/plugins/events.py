@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections.abc import Callable, Generator, Iterator
 from dataclasses import dataclass
@@ -23,7 +24,7 @@ import pytest
 
 from framework.config import Settings
 from framework.events import evidence
-from framework.events.client import OrdersClient
+from framework.events.client import AdminClient, ObservabilityClient, OrdersClient, SandboxApi
 from framework.events.correlation import correlation_id
 from framework.events.findings import active
 from framework.events.flow import OrderFlow
@@ -31,6 +32,8 @@ from framework.events.model import SandboxInfo
 from framework.events.process import SandboxProcess
 
 ROW_KEY = "events_row"
+# Credentials for a remote order-events system come from the environment, never from code or options.
+TOKEN_ENV = "SHOP_SANDBOX_TOKEN"  # noqa: S105 - the variable NAME, not a token
 _CALL = pytest.StashKey[pytest.TestReport]()
 _ROW = pytest.StashKey[dict[str, str]]()
 _SCENARIO = pytest.StashKey[str]()
@@ -39,7 +42,7 @@ _ROWS: list[dict[str, str]] = []
 
 @dataclass(frozen=True)
 class Sandbox:
-    client: OrdersClient
+    api: SandboxApi
     info: SandboxInfo
     log_path: Path | None
 
@@ -74,8 +77,8 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 @pytest.fixture(scope="session")
 def events_sandbox(settings: Settings, pytestconfig: pytest.Config, worker_id: str) -> Iterator[Sandbox]:
     if settings.sandbox_url:
-        client = OrdersClient(settings.sandbox_url)
-        info = client.info()
+        api = SandboxApi.connect(settings.sandbox_url, token=os.getenv(TOKEN_ENV))
+        info = api.orders.info()
         if info.build != settings.sandbox_build:
             pytest.fail(
                 f"--sandbox-url runs build {info.build!r} but --sandbox-build says "
@@ -83,16 +86,33 @@ def events_sandbox(settings: Settings, pytestconfig: pytest.Config, worker_id: s
                 "the known-defect marks would be wrong",
                 pytrace=False,
             )
-        yield Sandbox(client, info, None)
+        yield Sandbox(api, info, None)
         return
     log_path = Path(pytestconfig.rootpath, "reports", "events", f"sandbox-{worker_id}.log")
     process = SandboxProcess(pytestconfig.rootpath, settings.sandbox_build, log_path)
     url = process.start()
     try:
-        client = OrdersClient(url)
-        yield Sandbox(client, client.info(), log_path)
+        api = SandboxApi.connect(url)  # our own local process: no credentials
+        yield Sandbox(api, api.orders.info(), log_path)
     finally:
         process.stop()
+
+
+@pytest.fixture(scope="session")
+def orders_client(events_sandbox: Sandbox) -> OrdersClient:
+    """One domain, one client: tests that only need the customer API ask for this alone."""
+    return events_sandbox.api.orders
+
+
+@pytest.fixture(scope="session")
+def observability_client(events_sandbox: Sandbox) -> ObservabilityClient:
+    return events_sandbox.api.observe
+
+
+@pytest.fixture(scope="session")
+def admin_client(events_sandbox: Sandbox) -> AdminClient:
+    """Test-environment control (faults, workers, redrive): requested explicitly, never implied."""
+    return events_sandbox.api.admin
 
 
 @pytest.fixture
@@ -104,7 +124,7 @@ def flow_factory(
 
     def make(label: str = "") -> OrderFlow:
         cid = correlation_id(testrun_uid, worker_id, request.node.nodeid, label)
-        flow = OrderFlow(events_sandbox.client, events_sandbox.info, cid)
+        flow = OrderFlow(events_sandbox.api, events_sandbox.info, cid)
         flow.follow()
         flows.append(flow)
         return flow
