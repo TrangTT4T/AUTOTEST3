@@ -1,0 +1,72 @@
+# Requirement registry: the single source of truth for requirement ids, titles and risk.
+# Risk = likelihood x impact from the risk register (docs/01-strategy.md), banded low/medium/high.
+#
+# The framework enforces it:
+#   * every @REQ-SL-xx tag must exist here, and every requirement here needs a scenario
+#     (--fail-on-uncovered);
+#   * a scenario's @risk-* tag must equal the highest risk of its requirements;
+#   * the traceability matrix lists every requirement, covered or not.
+
+[REQ-SL-01]
+title = "A registered user logs in and lands on the products page"
+risk = "high"
+
+[REQ-SL-02]
+title = "Wrong, missing or locked-out credentials are refused with a clear error"
+risk = "high"
+
+[REQ-SL-03]
+title = "Protected pages need a session; logout ends it"
+risk = "high"
+
+[REQ-SL-04]
+title = "The catalogue shows every product with its true name, price and image"
+risk = "medium"
+
+[REQ-SL-05]
+title = "Products can be sorted by name and by price"
+risk = "medium"
+
+[REQ-SL-06]
+title = "A product page agrees with the catalogue card that opened it"
+risk = "medium"
+
+[REQ-SL-07]
+title = "Any product can be added to and removed from the cart"
+risk = "high"
+
+[REQ-SL-08]
+title = "The cart survives navigation, reloads and a second tab"
+risk = "medium"
+
+[REQ-SL-09]
+title = "Checkout refuses missing customer details, field by field"
+risk = "high"
+
+[REQ-SL-10]
+title = "The order overview shows the right subtotal, 8 % tax and total"
+risk = "high"
+
+[REQ-SL-11]
+title = "Finishing an order confirms it and empties the cart"
+risk = "high"
+
+[REQ-SL-12]
+title = "Reset App State returns the shop to a clean state"
+risk = "low"
+
+[REQ-SL-13]
+title = "Dynamic catalogue content loads asynchronously and settles correctly"
+risk = "medium"
+
+[REQ-SL-14]
+title = "Key interactions respond within their time budgets"
+risk = "medium"
+
+[REQ-SL-15]
+title = "The core journey works on a phone-sized touch screen"
+risk = "medium"
+
+[REQ-SL-16]
+title = "The pages look right (layout, alignment, images)"
+risk = "low"

@@ -10,6 +10,7 @@ that says what was really run and what was not.
 | 2 — Playwright end-to-end automation | 5–8 | LO3 | [Day 5](unit2/Day5.md) · [Day 6](unit2/Day6.md) · [Day 7](unit2/Day7.md) · [Day 8](unit2/Day8.md) |
 | 3 — Mobile (Appium) and asynchronous systems | 9–12 | LO5, LO6 | [Day 9](unit3/Day9.md) · [Day 10](unit3/Day10.md) · [Day 11](unit3/Day11.md) · [Day 12](unit3/Day12.md) |
 | 4 — AWS cloud execution, performance, CI/CD | 13–18 | LO7, LO8, LO9 | [Day 13](unit4/Day13.md) · [Day 14](unit4/Day14.md) · [Day 15](unit4/Day15.md) · [Day 16](unit4/Day16.md) · [Day 17](unit4/Day17.md) · [Day 18](unit4/Day18.md) |
+| 5 — Mock project design and implementation (no AWS) | 19–22 | LO1–LO9 | [Day 19](unit5/Day19.md) · [Day 20](unit5/Day20.md) · [Day 21](unit5/Day21.md) · [Day 22](unit5/Day22.md) — code: [`mock-project/`](../mock-project/README.md) |
 
 ## Reading code excerpts
 

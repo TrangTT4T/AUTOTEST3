@@ -1,0 +1,136 @@
+# Unit 5 mock project (mock-project/): quality gates, then the suite in its container across a
+# persona x browser matrix, then one merged quality matrix.
+#
+#   quality         lint, format, strict types, unit + plugin tests with a coverage ratchet,
+#                   requirement/finding coverage gate, workflow lint            (no browser)
+#   e2e (matrix)    build the test-runner image, run every scenario inside it   (one persona/browser each)
+#   quality-matrix  merge every run's traceability into requirement x run, gate on unexpected failures
+name: mock-project
+
+on:
+  push:
+    branches: [main]
+    paths: ["mock-project/**", ".github/workflows/mock-project.yml"]
+  pull_request:
+    paths: ["mock-project/**", ".github/workflows/mock-project.yml"]
+  schedule:
+    - cron: "17 3 * * *"  # nightly: the site under test can change without any commit of ours
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mock-project-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: mock-project
+
+env:
+  IMAGE: swaglabs-tests:ci
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: mock-project/requirements*.txt
+      - name: Install tools
+        run: pip install -r requirements-dev.txt
+      - name: Lint
+        run: ruff check . && ruff format --check .
+      - name: Types (mypy strict)
+        run: mypy
+      - name: Unit and plugin tests, coverage ratchet
+        run: pytest tests/unit -n auto --cov --cov-report=term --cov-report=xml:reports/coverage.xml
+      - name: Coverage gate - every requirement and every finding has a scenario
+        run: pytest --collect-only -q --fail-on-uncovered
+      - name: Workflow lint
+        working-directory: .
+        run: actionlint .github/workflows/mock-project.yml
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: unit-coverage
+          path: mock-project/reports/coverage.xml
+          retention-days: 14
+          if-no-files-found: ignore
+
+  e2e:
+    needs: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false  # one persona's result must not hide another's
+      matrix:
+        include:
+          - { label: standard_user-chromium, persona: standard_user, browser: chromium }
+          - { label: problem_user-chromium, persona: problem_user, browser: chromium }
+          - { label: performance_glitch_user-chromium, persona: performance_glitch_user, browser: chromium }
+          - { label: error_user-chromium, persona: error_user, browser: chromium }
+          - { label: visual_user-chromium, persona: visual_user, browser: chromium }
+          - { label: standard_user-firefox, persona: standard_user, browser: firefox }
+          - { label: standard_user-webkit, persona: standard_user, browser: webkit }
+          - { label: standard_user-Pixel-7, persona: standard_user, browser: chromium, device: Pixel 7 }
+    env:
+      # Matrix values reach the shell through the environment, never by ${{ }} inside a script.
+      PERSONA: ${{ matrix.persona }}
+      BROWSER: ${{ matrix.browser }}
+      DEVICE: ${{ matrix.device }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the test-runner image
+        run: docker build -f docker/Dockerfile -t "$IMAGE" .
+      - name: Run the scenarios in the container
+        run: |
+          mkdir -p reports
+          args=(tests/test_scenarios.py -n 4 --browser "$BROWSER")
+          if [ -n "$DEVICE" ]; then args+=(--device "$DEVICE"); fi
+          docker run --rm --init --ipc=host --read-only --tmpfs /tmp:exec \
+            -v "$PWD/reports:/work/reports" \
+            -e SWAGLABS_PERSONA="$PERSONA" \
+            -e GITHUB_SHA -e GITHUB_REF_NAME -e GITHUB_RUN_ID -e GITHUB_RUN_ATTEMPT -e GITHUB_WORKFLOW \
+            "$IMAGE" "${args[@]}"
+      - name: Check the evidence is complete and unchanged
+        if: always()
+        run: |
+          if [ -f reports/manifest.json ]; then python3 -m swaglabs.evidence reports; else echo "no manifest (run did not finish)"; fi
+      - name: Job summary
+        if: always()
+        run: |
+          for f in reports/traceability.md reports/perf.md; do
+            if [ -f "$f" ]; then cat "$f" >> "$GITHUB_STEP_SUMMARY"; fi
+          done
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reports-${{ matrix.label }}
+          path: mock-project/reports
+          retention-days: 14
+
+  quality-matrix:
+    needs: e2e
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: reports-*
+          path: mock-project/all-reports
+      - name: Merge the runs into one quality matrix (fails on any unexpected failure)
+        run: python3 -m swaglabs.matrix all-reports/*/traceability.json | tee quality-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: quality-matrix
+          path: mock-project/quality-matrix.md
+          retention-days: 30

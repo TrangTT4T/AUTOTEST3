@@ -8,13 +8,17 @@ Learning guides (one per day, newbie → senior) and the project built through t
 | 2 | 5–8 | Playwright end-to-end automation | [docs/unit2](docs/unit2) |
 | 3 | 9–12 | Mobile (Appium) and asynchronous-system testing | [docs/unit3](docs/unit3) |
 | 4 | 13–18 | AWS cloud execution, performance (JMeter), and CI/CD | [docs/unit4](docs/unit4) |
+| 5 | 19–22 | Mock project: Swag Labs, end to end, without AWS | [docs/unit5](docs/unit5) — code: [mock-project/](mock-project/README.md) |
 
 The code at the root of this repository is the **final state** after Unit 4: it contains every
-earlier day's work. The guides mention per-day packages such as `Unit2/day7-code/shop-bdd.zip`;
+earlier day's work. Unit 5's mock project is a separate, self-contained project in
+[`mock-project/`](mock-project/README.md) (own dependencies, image and workflow
+`.github/workflows/mock-project.yml`). The guides mention per-day packages such as `Unit2/day7-code/shop-bdd.zip`;
 in this repository, all of them are this one project.
 
 Systems used: the Shopify demo store `sauce-demo.myshopify.com` (web), Sauce Labs My Demo App
-(Android), a local order-events sandbox (`sandbox/`), and BlazeDemo for light load tests only.
+(Android), a local order-events sandbox (`sandbox/`), BlazeDemo for light load tests only, and
+Swag Labs (`www.saucedemo.com`, Unit 5 — single-user timings only, never load).
 
 ---
 

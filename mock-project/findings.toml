@@ -1,0 +1,115 @@
+# Findings register: defects found in the system under test, per persona.
+#
+# A finding names the PERSONAS it affects and the AREA (behaviour) it breaks. A scenario
+# declares the behaviours it depends on with @area-<name> tags. When the suite runs as one of
+# the affected personas, every scenario with that area becomes a STRICT expected failure
+# (xfail, strict=True, raises=AssertionError):
+#   * the defect still fails the scenario  -> XFAIL, the run stays green, the matrix says KNOWN DEFECT;
+#   * the defect has been fixed            -> XPASS, the run goes RED: update this register;
+#   * it fails in another way (timeout, crash in our code) -> FAILED, the run goes RED.
+#
+# Full reports with reproduction steps: docs/03-findings.md. Every id here must appear there.
+
+[areas]
+catalogue-images = "Each catalogue card shows its own product image"
+catalogue-prices = "The price on a catalogue card is the product's real price"
+sorting = "Choosing a sort order re-orders the catalogue without errors"
+add-any-product = "Every product (not only the first few) can be added from the catalogue"
+remove-from-catalogue = "Remove buttons on the catalogue page take products out of the cart"
+product-links = "A catalogue card opens its own product page"
+last-name-entry = "Text typed into the Last Name field stays there"
+last-name-required = "Checkout refuses an empty Last Name"
+finish-order = "The Finish button completes the order"
+response-time = "Interactions finish within their time budgets"
+reset-state = "Reset App State updates the page it was used on"
+
+[SL-01]
+title = "Every catalogue card shows the same wrong image"
+personas = ["problem_user"]
+area = "catalogue-images"
+requirement = "REQ-SL-04"
+severity = "minor"
+
+[SL-02]
+title = "Sorting does nothing: the order never changes"
+personas = ["problem_user"]
+area = "sorting"
+requirement = "REQ-SL-05"
+severity = "major"
+
+[SL-03]
+title = "Sorting opens an alert 'Sorting is broken!' and the order does not change"
+personas = ["error_user"]
+area = "sorting"
+requirement = "REQ-SL-05"
+severity = "major"
+
+[SL-04]
+title = "Add to cart does nothing for three of the six products"
+personas = ["problem_user", "error_user"]
+area = "add-any-product"
+requirement = "REQ-SL-07"
+severity = "critical"
+
+[SL-05]
+title = "Remove on the catalogue page does nothing"
+personas = ["problem_user", "error_user"]
+area = "remove-from-catalogue"
+requirement = "REQ-SL-07"
+severity = "major"
+
+[SL-06]
+title = "A catalogue card opens the page of a different product (id + 1)"
+personas = ["problem_user"]
+area = "product-links"
+requirement = "REQ-SL-06"
+severity = "major"
+
+[SL-07]
+title = "Text typed into Last Name is lost (moved into First Name, or dropped)"
+personas = ["problem_user", "error_user"]
+area = "last-name-entry"
+requirement = "REQ-SL-09"
+severity = "critical"
+
+[SL-14]
+title = "Checkout accepts an empty Last Name"
+personas = ["error_user"]
+area = "last-name-required"
+requirement = "REQ-SL-09"
+severity = "major"
+
+[SL-08]
+title = "Finish does not complete the order"
+personas = ["error_user"]
+area = "finish-order"
+requirement = "REQ-SL-11"
+severity = "critical"
+
+[SL-09]
+title = "Catalogue prices are random on every load and disagree with the product page and cart"
+personas = ["visual_user"]
+area = "catalogue-prices"
+requirement = "REQ-SL-04"
+severity = "critical"
+
+[SL-10]
+title = "The Backpack card shows the wrong image"
+personas = ["visual_user"]
+area = "catalogue-images"
+requirement = "REQ-SL-04"
+severity = "minor"
+
+[SL-11]
+title = "Login and sorting each take about 5 seconds"
+personas = ["performance_glitch_user"]
+area = "response-time"
+requirement = "REQ-SL-14"
+severity = "major"
+
+[SL-12]
+title = "After Reset App State the catalogue still shows Remove buttons until a reload"
+personas = ["standard_user", "problem_user", "performance_glitch_user", "error_user", "visual_user"]
+area = "reset-state"
+requirement = "REQ-SL-12"
+severity = "minor"

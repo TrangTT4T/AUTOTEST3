@@ -1,0 +1,18 @@
+# Response-time budgets for single-user interactions, measured in the browser (milliseconds).
+#
+# These are NOT load tests: Swag Labs is a public demo we do not own, so we never put load on it.
+# Each budget is checked on every run (REQ-SL-14) and recorded in reports/perf.json; the report
+# also splits each measurement into network-busy time and client (JavaScript/render) time, which
+# tells us WHERE a slow interaction spends its time.
+#
+# Budgets are set from the standard_user baseline (p95 < 1 s on CI runners) with headroom for a
+# shared runner; tighten them as the baseline proves stable, never loosen them to pass a run.
+
+[budgets]
+login = 2500           # click Login -> products list visible
+sort = 2000            # choose a sort order -> first card re-ordered
+open-product = 2000    # click a card -> product page visible
+add-to-cart = 1000     # click Add -> badge updated
+open-cart = 2000       # click the cart icon -> cart list visible
+checkout-overview = 2000  # Continue on step one -> overview visible
+finish-order = 2000    # Finish -> confirmation visible

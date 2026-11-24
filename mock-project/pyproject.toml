@@ -1,0 +1,105 @@
+# Swag Labs mock project (Unit 5). Tool configuration only: this is a test suite, not a package.
+# Dependencies are pinned in requirements.txt / requirements-dev.txt.
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+bdd_features_base_dir = "features"
+base_url = "https://www.saucedemo.com"
+requirements_registry = "requirements.toml"
+findings_register = "findings.toml"
+perf_budgets = "perf-budgets.toml"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+    "--screenshot=only-on-failure",
+    "--tracing=retain-on-failure",
+    "--output=reports/artifacts",
+]
+markers = [
+    "smoke: fast critical checks, run on every change",
+    "regression: the full suite",
+    "manual: not automated - documented gap",
+    "persona-independent: the result does not depend on --persona; runs in the standard_user job only",
+    "known_defect(id): expected to fail because of a registered finding (findings.toml)",
+    "risk-high: risk score 15-25",
+    "risk-medium: risk score 8-14",
+    "risk-low: risk score 1-7",
+]
+log_level = "INFO"
+log_format = "%(asctime)s %(levelname)-5s %(name)s: %(message)s"
+log_date_format = "%H:%M:%S"
+filterwarnings = [
+    "error",
+    # pytest-base-url (installed with pytest-playwright) uses a pattern pytest 9 deprecates.
+    "ignore:Session-scoped fixtures defined as instance methods are deprecated:DeprecationWarning",
+    "ignore::pytest.PytestRemovedIn10Warning:_pytest.fixtures",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["docs"]  # the guides' code blocks are illustrations, not project code
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W", "I", "B", "UP", "SIM", "PT", "RUF", "N", "C4", "PL",
+    "S",     # security (bandit)
+    "BLE",   # no blind `except Exception` without a written reason
+    "ARG",   # unused arguments
+    "TRY",   # exception handling
+    "PERF",  # performance anti-patterns
+    "PTH",   # pathlib
+    "T20",   # no stray print()
+    "FBT",   # no boolean positional parameters
+    "ISC",   # implicit string concatenation
+    "C90",   # cyclomatic complexity (max 10)
+    "DTZ",   # no naive datetimes in evidence
+]
+ignore = [
+    "PLR2004",  # magic values in assertions are the expected values
+    "PLR0913",  # pytest-bdd hooks have fixed, long signatures
+    "TRY003",   # exception messages ARE the diagnosis in a test framework
+]
+
+[tool.ruff.lint.per-file-ignores]
+# pytest and pytest-bdd call hooks with fixed signatures, used or not.
+"swaglabs/plugins/**" = ["PLR0917", "ARG001"]
+"tests/steps/**" = ["ARG001"]
+# assert is how pytest tests check; test data contains fake secrets.
+"tests/**" = ["S101", "S105", "S106", "FBT001"]
+# Locator constants are named after fields ("_password"), not secrets.
+"swaglabs/pages/**" = ["S105"]
+# Command-line tools print their results.
+"swaglabs/matrix.py" = ["T201"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["swaglabs", "tests", "conftest.py"]
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["gherkin.*"]  # gherkin-official (used by pytest-bdd) ships no type information
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["swaglabs"]
+branch = true
+# Page objects and the browser-facing glue run only with a browser; the live jobs exercise them.
+omit = [
+    "swaglabs/pages/*",
+    "swaglabs/app.py",
+    "swaglabs/network.py",
+    "swaglabs/plugins/browser.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 90

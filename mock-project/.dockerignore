@@ -1,0 +1,11 @@
+# Only what is needed to RUN the suite goes into the image (smaller, nothing secret, better cache).
+.venv
+venv
+**/__pycache__
+**/.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+reports
+test-results
+docker

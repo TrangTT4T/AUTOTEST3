@@ -1,0 +1,36 @@
+# Local, reproducible runs of the suite in the test-runner image.
+#
+#   docker compose -f docker/compose.yaml build
+#   docker compose -f docker/compose.yaml run --rm tests                      # standard_user
+#   SWAGLABS_PERSONA=problem_user docker compose -f docker/compose.yaml run --rm tests
+#   docker compose -f docker/compose.yaml run --rm tests -n 4 --browser firefox
+#   docker compose -f docker/compose.yaml run --rm unit                       # offline checks
+#
+# Each run gets a fresh container: nothing survives between runs except the reports/ folder.
+name: swaglabs
+
+x-runner: &runner
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
+  image: swaglabs-tests:local
+  init: true            # a real PID 1: signals reach pytest, zombie browser processes are reaped
+  ipc: host             # Chromium needs more shared memory than Docker's 64 MB default
+  read_only: true       # the code cannot be changed by a test, and nothing is left behind
+  tmpfs:
+    - /tmp:exec,size=1g # browser profiles, downloads, Playwright's temp files
+  volumes:
+    - ../reports:/work/reports
+  environment:
+    SWAGLABS_PERSONA: ${SWAGLABS_PERSONA:-standard_user}
+    SWAGLABS_UI_TIMEOUT_MS: ${SWAGLABS_UI_TIMEOUT_MS:-10000}
+
+services:
+  tests:
+    <<: *runner
+    command: ["-n", "4"]
+
+  unit:
+    <<: *runner
+    network_mode: none  # the offline suite must not need the network: prove it
+    command: ["tests/unit", "-q"]
