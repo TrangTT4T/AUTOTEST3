@@ -43,3 +43,4 @@ objects) match the root code line for line. Test counts in verification logs are
 | The load-profile script implements the planned load profile (ISTQB CT-PT 4.2.7) | `tests/unit/test_jmeter_plans.py` against `perf/workload.toml` |
 | JMeter plans: bounded, property-driven, every request asserted, explicit timeouts, polite to third-party sites (with a setUp guard); results format pinned | `tests/unit/test_jmeter_plans.py`, `-q perf/jmeter.properties` |
 | Playwright: one place for page and `expect` timeouts, aligned with `--ui-timeout` | `configure_page`, `_expect_timeout`, an architecture test |
+| A hung test fails on its own (90 s per test) instead of stalling CI; no retries; `.env` files never committed | `pytest-timeout` (`timeout` in `pyproject.toml`), `.gitignore` |

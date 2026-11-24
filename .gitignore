@@ -15,3 +15,7 @@ coverage.xml
 jmeter.log
 *.log
 *.jtl
+# Local environment files may hold credentials: never commit them (an .env.example may be).
+.env
+.env.*
+!.env.example

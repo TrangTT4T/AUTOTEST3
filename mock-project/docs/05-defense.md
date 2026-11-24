@@ -23,6 +23,9 @@ reviewers, OIDC instead of long-lived keys, and a self-hosted runner in a privat
 ## 2. Reliability (flakiness is a defect of the suite)
 
 - **No fixed waits.** State-based waits only; enforced by an architecture test.
+- **Layered timeouts.** Each action and assertion waits at most `--ui-timeout` (10 s); each test at
+  most 90 s (`pytest-timeout`: a hang fails with a stack trace instead of stalling CI); each CI job
+  at most 20 min. No retries: a retry would hide the flakiness instead of removing it.
 - **Isolation.** Fresh browser context per test; arrange through state (cookie, localStorage),
   so no scenario depends on another or on order — which is what makes `-n 4` safe.
 - **Deterministic oracles.** Sorting is checked by name order (visual_user's random prices

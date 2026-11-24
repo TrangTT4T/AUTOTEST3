@@ -33,6 +33,11 @@ markers = [
     "risk-medium: risk score 8-14",
     "risk-low: risk score 1-7",
 ]
+# Per-test ceiling (set-up + test + teardown). Not a knob to make slow tests pass: actions and
+# assertions have their own, much shorter timeouts (--ui-timeout). This catches the rare HANG
+# (a deadlock, an unbounded wait) and fails that test with a stack trace instead of stalling the
+# CI job until its job timeout. The slowest test today takes ~25 s; raise this only with evidence.
+timeout = 90
 log_level = "INFO"
 log_format = "%(asctime)s %(levelname)-5s %(name)s: %(message)s"
 log_date_format = "%H:%M:%S"

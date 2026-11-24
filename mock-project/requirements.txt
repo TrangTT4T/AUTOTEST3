@@ -5,3 +5,4 @@ pytest-bdd==9.0.1
 pytest-playwright==0.10.0
 playwright==1.63.0
 pytest-xdist==3.8.0
+pytest-timeout==2.4.0  # a hung test fails with a stack trace instead of stalling CI
