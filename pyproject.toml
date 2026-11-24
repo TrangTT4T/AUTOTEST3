@@ -80,6 +80,7 @@ ignore = [
 # Command-line tools print their results.
 "framework/perf/gate.py" = ["T201"]
 "framework/perf/correlate.py" = ["T201"]
+"framework/perf/model.py" = ["T201"]
 "framework/cloud/audit.py" = ["T201"]
 "framework/cloud/run_suite.py" = ["T201"]
 "framework/review.py" = ["T201"]

@@ -19,6 +19,7 @@ class Sample:
     code: str
     message: str
     threads: int
+    thread: str = ""  # thread name: "<thread group> 1-3" (optional column)
 
     @property
     def end_ms(self) -> int:
@@ -49,6 +50,7 @@ def read_jtl(path: Path) -> list[Sample]:
                 code=row["responseCode"],
                 message=row.get("failureMessage") or row.get("responseMessage") or "",
                 threads=int(row.get("allThreads") or 0),
+                thread=row.get("threadName") or "",
             )
             for row in reader
         ]
@@ -103,6 +105,43 @@ def stats_by_label(samples: Iterable[Sample]) -> dict[str, Stats]:
     for sample in samples:
         groups[sample.label].append(sample)
     return {label: stats_for(label, group) for label, group in sorted(groups.items())}
+
+
+@dataclass(frozen=True)
+class Window:
+    """The part of a run that is analysed: the steady state between ramp-up and ramp-down."""
+
+    start_s: float  # seconds after the first load sample started
+    end_s: float
+    kept: int
+    total: int
+
+
+def steady_state(
+    samples: Sequence[Sample], *, skip_head_s: float, skip_tail_s: float, thread_prefix: str = ""
+) -> tuple[list[Sample], Window]:
+    """Samples of the load threads that start after the ramp-up and end before the ramp-down.
+
+    Ramp-up samples meet cold caches and growing load; ramp-down samples meet a draining system.
+    Mixing them into the steady state hides or invents problems (CT-PT 4.3, 4.4).
+    """
+    load = [s for s in samples if s.thread.startswith(thread_prefix)]
+    if not load:
+        return [], Window(0.0, 0.0, 0, 0)
+    origin = min(s.start_ms for s in load)
+    finish = max(s.end_ms for s in load)
+    start_ms = origin + skip_head_s * 1000
+    end_ms = finish - skip_tail_s * 1000
+    kept = [s for s in load if s.start_ms >= start_ms and s.end_ms <= end_ms]
+    return kept, Window((start_ms - origin) / 1000, (end_ms - origin) / 1000, len(kept), len(load))
+
+
+def response_codes(samples: Iterable[Sample]) -> dict[str, dict[str, int]]:
+    """label -> response code -> count (transaction samples have no code: shown as "-")."""
+    codes: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for s in samples:
+        codes[s.label][s.code or "-"] += 1
+    return {label: dict(sorted(c.items())) for label, c in sorted(codes.items())}
 
 
 @dataclass(frozen=True)

@@ -115,7 +115,7 @@ Swap your Day 15 **cloud run record** with a partner. Check that:
 | 90–110 | B3 — Corrective actions, verified |
 | 110–125 | B4 — From local telemetry to CloudWatch evidence |
 | 125–145 | B5 — Appium on Device Farm (walkthrough) and correlating mobile evidence |
-| 145–150 | B6 — Deliverables |
+| 145–150 | B6 — Deliverables (B7 is an extension: do it after the lab, or as homework) |
 
 ## B0 — Setup 🟢
 
@@ -409,6 +409,150 @@ A device run produces three timelines. Line them up:
 - [ ] The B4 mapping table, filled with the CloudWatch queries you would run for your own system
 - [ ] A Device Farm run plan: the pool, the timeout, the uploads, the gates, the cleanup, and the cost estimate (2 devices × your suite's minutes × $0.17)
 - [ ] The B5.3 exercise answered
+- [ ] (Extension) B7: the load-profile gate report, and your answer to the B7.5 "Your turn"
+
+---
+
+## B7 — Extension: one complete ISTQB CT-PT chapter 4 cycle (load profile) 🟡 → 🔴
+
+B1–B3 practised the pieces. This extension puts them in the order of the ISTQB *Performance
+Testing* syllabus, chapter 4 — **plan → analyse/design/implement → execute → analyse and report**
+— on the sandbox, where any load is allowed. Everything below runs in CI on every push.
+
+| CT-PT task | Artefact |
+|---|---|
+| 4.1 Planning: objectives, plan, communication | `perf/performance-test-plan.md` (the PTP) |
+| 4.2.3–4.2.5 Operational profile → load profile, throughput vs concurrency | `perf/workload.toml`, `python -m framework.perf.model` |
+| 4.2.2, 4.2.6–4.2.8 Transactions, script structure, implementation, preparation | `perf/orders_sandbox_profile.jmx` |
+| 4.3 Execution: ramp-up, steady state, ramp-down, monitoring, abort | the same plan + its abort listener |
+| 4.4 Analysis and reporting | `python -m framework.perf.gate … --profile sandbox_profile` |
+
+### B7.1 🟢 From an operational profile to a load profile
+
+```bash
+python -m framework.perf.model perf/workload.toml
+```
+
+```
+| Journey                  | Share | Rate /s at peak | R s  | Z s | Concurrent users N = X(R+Z) |
+| J1 Place order and track | 30%   | 1.20            | 1    | 0   | 1.2 |
+| J2 Check order status    | 70%   | 2.80            | 0.05 | 2   | 5.7 |
+| Total                    | 100%  | 4.00            |      |     | 6.9 |
+Shape: ramp-up 20 s -> steady 60 s at 4 journeys/s -> ramp-down 20 s (100 s, ~320 journeys).
+```
+
+The **operational profile** says *who does what* (30 % order, 70 % only check an order). The
+**load profile** adds *how much and when*: a rate, a ramp-up, a steady state, a ramp-down. The
+bridge is **N = X × (R + Z)**: 2.8 status checks per second, each taking 0.05 s plus 2 s of
+reading, keep 5.7 users busy at any moment. Read it backwards for the CT-PT example: 500 users
+querying once a minute make 30 000 queries an hour; querying once an hour, 500 — **the same
+concurrency, 60 times the load**.
+
+### B7.2 🟡 The script, part by part
+
+```
+setUp "Prepare"   (stoptest on error)   GET /health  -> seed 20 orders -> wait until the last is shipped
+                                        -> "prepare: test data ready" (fails the run if not)
+Open Model "Shoppers"  rate(0/s) random_arrivals(20 s) rate(4/s) random_arrivals(60 s)
+                       rate(4/s) random_arrivals(20 s) rate(0/s)
+  Gate: send load only while not aborted
+    If dice <= order_pct (30)  ─ J1 Place order and track            (nested transaction)
+                                  ├ J1.1 Submit order     POST /orders, assert 202, extract order_id
+                                  └ J1.2 Wait until shipped  poll GET /orders/{id} + check sampler
+    If dice >  order_pct       ─ J2 Check order status   (think time 1-3 s EXCLUDED: includeTimers=false)
+                                  random seeded order (parameterisation), assert 200 + status "shipped"
+JSR223 Listener "Abort criteria"   error rate of the load > 10 % after 50 samples -> stop the load
+tearDown "Verify"                  /metrics: no dead letters; "run completed without abort"
+```
+
+Why an **open model**? Public traffic does not slow down when the shop does. A closed thread
+group (B2) lowers its own arrival rate as the system slows (coordinated omission, Day 14 §3.4);
+`rate(4/s)` keeps arriving. It also gives a true **ramp-down**, which a classic thread group
+cannot.
+
+Two details a reviewer will ask about:
+
+- **Nested transactions.** `J1` measures what the customer experiences end to end; `J1.1` and
+  `J1.2` say where the time goes (submitting is ~3 ms, waiting for the asynchronous pipeline is
+  the rest).
+- **Think time is not response time.** `J2` excludes its timer; `J1.2` includes its poll
+  interval, because a customer watching the status page really waits through it.
+
+**Consistency is tested, not hoped for** (CT-PT 4.2.7): `test_load_profile_plan_matches_the_workload_model`
+fails if the plan's defaults (`rate`, `rampup`, `steady`, `rampdown`, `order_pct`) differ from
+`perf/workload.toml`.
+
+### B7.3 🟡 Run it
+
+```bash
+python -m sandbox --port 8765 &
+python -m framework.perf.telemetry http://127.0.0.1:8765 --out reports/perf/telemetry.csv --duration 110 &
+jmeter -n -t perf/orders_sandbox_profile.jmx -q perf/jmeter.properties -l reports/perf/profile.jtl -e -o reports/perf/profile-html
+python -m framework.perf.gate reports/perf/profile.jtl --profile sandbox_profile --timeline-label "J2 Check order status"
+```
+
+Real result (full profile, 24 November 2026):
+
+```
+Executive summary
+Verdict: PASSED - 17 of 17 checks met.
+Evidence: 784 samples, 0 errors; steady state +20 s to +76 s (784 of 1118 load samples).
+```
+
+| Steady state | Samples | p95 ms | Throughput /s | Plan /s | Objective |
+|---|---:|---:|---:|---:|---|
+| J1 Place order and track | 65 | 217 | 1.18 | 1.2 | p95 ≤ 2000, ≥ 0.9/s |
+| J1.1 Submit order | 66 | 3 | | | p95 ≤ 200 |
+| J2 Check order status | 162 | 2 | 2.91 | 2.8 | p95 ≤ 300, ≥ 2.1/s |
+
+| Load over time (s) | 0 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Max active threads | 3 | 9 | 14 | 11 | 12 | 11 | 8 | 12 | 10 | 3 |
+| Samples (J2) | 5 | 24 | 31 | 33 | 30 | 28 | 22 | 26 | 21 | 5 |
+
+The ramp-up, the plateau and the ramp-down are visible in the timeline. **The model checks
+out:** mean active threads in the steady state = **7.0**; the model predicted **6.9**.
+
+### B7.4 🔴 Read it like a senior
+
+1. **Did the test deliver the planned load?** Throughput 1.18 and 2.91 /s against 1.2 and 2.8:
+   yes. A test that did not reach its load proves nothing about it — that is why throughput is a
+   *technical objective* in `sla.toml`, not just a number in a table.
+2. **Why exclude the ramps?** Ramp-up samples meet cold caches and growing load; ramp-down
+   samples meet a draining system. The gate judges only +20 s to +76 s (the window ends 20 s
+   before the last load sample).
+3. **Set-up and clean-up are part of the evidence.** "prepare: test data ready" and the two
+   `verify:` checks are judged on the whole run (`window = "whole"`): a run on an invalid
+   environment, or one that left dead letters behind, does not pass.
+
+### B7.5 🔴 The abort criterion, seen working
+
+Force failures (no polling: every order looks "not shipped"):
+
+```bash
+jmeter -n -t perf/orders_sandbox_profile.jmx -q perf/jmeter.properties -l reports/perf/abort.jtl \
+  -Jrampup=5 -Jsteady=30 -Jrampdown=5 -Jorder_pct=100 -Jmax_polls=0 -Jabort_min_samples=20
+```
+
+```
+ERROR ... ABORT: error rate 11.8% > 10.0% after 51 samples - no more requests will be sent
+verify: run completed without abort,500,ABORTED: error rate 11.8% > 10.0% after 51 samples
+```
+
+After the abort, no request reached the sandbox; the schedule ran out empty and the tearDown
+group recorded the reason, so the gate fails with the cause in the report.
+
+> **War story — stopping JMeter is harder than it looks.** The first version called
+> `ctx.getEngine().askThreadsToStop()`: the Open Model Thread Group kept scheduling and the run
+> hung. `stopTest(false)` (graceful) hung as well; `stopTest(true)` killed the JVM with *"could not
+> stop test"* before the tearDown group could record anything. The working design **sheds the
+> load** instead: a gate (If-controller) in front of the journeys lets nothing through once the
+> abort flag is set. Lesson: test your stop rule *before* you need it — a stop rule that has
+> never fired is a hope, not a control.
+
+> **Your turn (🟡).** Change the mix to 50/50 in `perf/workload.toml`. Run
+> `pytest tests/unit/test_jmeter_plans.py` — what fails, and why is that good? Fix the plan's
+> default, re-run the model, and predict the steady-state concurrency before you run JMeter.
 
 ---
 
@@ -470,4 +614,8 @@ Topic revision of LO5, LO7, and LO8, then the CI/CD integration lab: one pipelin
 | `framework/perf` unit tests | Pass (percentiles, CSV with commas, gate fail-closed, diagnosis) |
 | CI performance job replayed locally (5 users, 30 s, default latency) | Gate PASSED; TX p95 520 ms; already shows a fulfilment queue of 2.8 |
 | Device Farm package | 94 MB, 60 wheels, glibc ≤ 2.26; offline install + 10 tests collected |
+| B7 load profile, full (20/60/20 s) on the local sandbox | Gate PASSED 17/17; J1 p95 217 ms at 1.18/s, J2 p95 2 ms at 2.91/s; mean active threads 7.0 (model 6.9) |
+| B7 CI variant (10/30/10 s, `--skip-head 10 --skip-tail 10`) | Gate PASSED; steady state +10 s to +36 s |
+| B7.5 abort criterion | Fired at 11.8 % after 51 samples; no further requests; tearDown recorded `ABORTED` |
+| `askThreadsToStop()`, `stopTest(false)`, `stopTest(true)` on the Open Model Thread Group | Observed: hang, hang, JVM exit before tearDown (hence the load-shedding gate) |
 | **Device Farm run / CloudWatch on AWS** | **Not executed**: no AWS account; CloudWatch metric names from AWS documentation |

@@ -11,7 +11,18 @@ import pytest
 from framework.perf.correlate import TelemetryRow, Window, diagnose, windows
 from framework.perf.correlate import main as correlate_main
 from framework.perf.gate import Objective, evaluate, load_objectives, main
-from framework.perf.jtl import Sample, percentile, read_jtl, stats_by_label, timeline
+from framework.perf.jtl import (
+    Sample,
+    percentile,
+    read_jtl,
+    response_codes,
+    stats_by_label,
+    steady_state,
+    timeline,
+)
+from framework.perf.jtl import Window as SteadyWindow
+from framework.perf.model import concurrency, jmeter_properties, load_workload, throughput
+from framework.perf.model import main as model_main
 from framework.perf.telemetry import FIELDS, rows_from
 from framework.perf.telemetry import main as telemetry_main
 
@@ -222,3 +233,122 @@ def test_correlate_cli_writes_the_report(tmp_path: Path) -> None:
     assert correlate_main([str(jtl), str(tele), "--label", "TX", "--out", str(out)]) == 0
     report = out.read_text(encoding="utf-8")
     assert "**Bottleneck: `payments`**" in report
+
+
+# --- Load profile, steady state and reporting (ISTQB CT-PT chapter 4) ------------------------------
+
+
+def test_interactive_response_time_law() -> None:
+    # The CT-PT example: 500 users, one query a minute vs one query an hour -> 60 x the load.
+    per_minute = throughput(users=500, response_s=0, think_s=60)
+    per_hour = throughput(users=500, response_s=0, think_s=3600)
+    assert per_minute * 3600 == pytest.approx(30_000)
+    assert per_hour * 3600 == pytest.approx(500)
+    assert concurrency(rate_per_s=2.8, response_s=0.05, think_s=2.0) == pytest.approx(5.74)
+    with pytest.raises(ValueError, match="response"):
+        throughput(10, 0, 0)
+    with pytest.raises(ValueError, match="must be >= 0"):
+        concurrency(-1, 1, 1)
+
+
+def test_repository_workload_derives_the_load_profile(capsys: pytest.CaptureFixture[str]) -> None:
+    workload = load_workload(ROOT / "perf/workload.toml")
+    rows = {r.journey.key: r for r in workload.rows()}
+    assert rows["J1"].rate_per_s == pytest.approx(1.2)
+    assert rows["J2"].users == pytest.approx(5.74)
+    assert workload.load.journeys_started() == pytest.approx(320)
+    assert jmeter_properties(workload) == {
+        "rate": "4",
+        "rampup": "20",
+        "steady": "60",
+        "rampdown": "20",
+        "order_pct": "30",
+    }
+    assert model_main([str(ROOT / "perf/workload.toml")]) == 0
+    out = capsys.readouterr().out
+    assert "| **Total** | 100% | 4.00 | | | **6.9**" in out
+    assert "-Jrate=4 -Jrampup=20 -Jsteady=60 -Jrampdown=20 -Jorder_pct=30" in out
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (("share = 0.70", "share = 0.60"), "add up to 1.0"),
+        (("peak_journeys_per_s = 4.0", "peak_journeys_per_s = 0"), "must be positive"),
+        (
+            (
+                '[operational_profile.journeys.J1]\nname = "J1',
+                '[operational_profile.journeys.J9]\nname = "J9',
+            ),
+            "needs journey J1",
+        ),
+    ],
+)
+def test_broken_workloads_are_refused(tmp_path: Path, change: tuple[str, str], message: str) -> None:
+    text = (ROOT / "perf/workload.toml").read_text(encoding="utf-8").replace(*change)
+    path = tmp_path / "w.toml"
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
+        jmeter_properties(load_workload(path))
+    assert model_main([str(tmp_path / "missing.toml")]) == 2
+
+
+def _load(start: int, elapsed: int, label: str = "A", thread: str = "Shoppers 1-1") -> Sample:
+    return Sample(start, elapsed, label, success=True, code="200", message="", threads=1, thread=thread)
+
+
+def test_steady_state_drops_ramps_and_non_load_threads() -> None:
+    samples = [_load(t * 1000, 100) for t in range(0, 100, 5)]  # load from 0 s to 95.1 s
+    samples += [
+        _load(0, 50, "prepare", thread="Prepare 1-1"),
+        _load(99_000, 50, "verify", thread="Verify 1-1"),
+    ]
+    kept, window = steady_state(samples, skip_head_s=20, skip_tail_s=20, thread_prefix="Shoppers")
+    assert [s.start_ms // 1000 for s in kept] == list(range(20, 80, 5))  # the 75 s sample ends at 75.1 s
+    assert (window.start_s, window.end_s, window.kept, window.total) == (20, 75.1, 12, 20)
+    empty = steady_state(samples, skip_head_s=0, skip_tail_s=0, thread_prefix="Nobody")
+    assert empty == ([], SteadyWindow(0, 0, 0, 0))
+
+
+def test_response_codes_per_label() -> None:
+    samples = [_sample(0, 1), _sample(1, 1, ok=False), _sample(2, 1, label="B")]
+    assert response_codes(samples) == {"A": {"200": 1, "500": 1}, "B": {"200": 1}}
+
+
+def test_whole_run_objectives_use_every_sample() -> None:
+    steady = stats_by_label([_sample(i, 1) for i in range(30)])
+    whole = stats_by_label([_sample(0, 1, label="prepare")])
+    objectives = [Objective("A", 20, 0.0), Objective("prepare", 1, 0.0, whole_run=True)]
+    assert all(v.passed for v in evaluate(steady, objectives, whole_run=whole))
+    assert not all(v.passed for v in evaluate(steady, objectives))  # without the whole run it is missing
+
+
+def test_profile_gate_end_to_end(tmp_path: Path) -> None:
+    def row(t_ms: int, ms: int, label: str, thread: str, ok: str = "true") -> str:
+        return f"{t_ms},{ms},{label},200,OK,{thread},text,{ok},,1,1,5,5,u,0,0,0"
+
+    rows = [row(s * 200, 300, "J1 Place order and track", "Shoppers 1-1") for s in range(500)]  # 0-100 s, 5/s
+    rows += [row(s * 100, 2, "J1.1 Submit order", "Shoppers 1-2") for s in range(1000)]
+    rows += [row(s * 100 + 50, 2, "J2 Check order status", "Shoppers 1-3") for s in range(1000)]
+    rows += [row(0, 5, "prepare: test data ready", "Prepare 1-1")]
+    rows += [row(100_500, 5, "verify: GET /metrics", "Verify 1-1")]
+    rows += [row(100_600, 5, "verify: run completed without abort", "Verify 1-1", ok="false")]
+    jtl = _jtl(tmp_path, rows)
+    args = [
+        str(jtl),
+        "--sla",
+        str(ROOT / "perf/sla.toml"),
+        "--profile",
+        "sandbox_profile",
+        "--out",
+        str(tmp_path),
+    ]
+    assert main([*args, "--timeline-label", "J2 Check order status"]) == 1  # the abort check failed
+    report = (tmp_path / "gate-sandbox_profile.md").read_text(encoding="utf-8")
+    assert "**Verdict: FAILED** - 16 of 17 checks met." in report
+    assert "steady state +20 s to +80 s" in report
+    assert "First miss: verify: run completed without abort - errors %" in report
+    assert "## Load over time" in report
+    assert "| J2 Check order status | 200: 1000 |" in report
+    assert main([*args, "--skip-head", "0", "--skip-tail", "0"]) == 1
+    assert "steady state +0 s to +100 s" in (tmp_path / "gate-sandbox_profile.md").read_text(encoding="utf-8")

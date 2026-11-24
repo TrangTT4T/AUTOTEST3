@@ -288,8 +288,9 @@ which proves that each defect test fails **only** because of its defect.
 | `framework/cloud/run_suite.py` | Container entry point: JSON log lines, SIGTERM → clean stop, reports + manifest stored, honest exit code | Yes |
 | `framework/cloud/artifacts.py` | Artifact store: a folder or S3 (SSE, run-id metadata, manifest last) | Yes (S3 tested with moto) |
 | `framework/cloud/audit.py` | Static audit of IAM, ECS, CloudFormation, and workflows | Yes |
-| `perf/*.jmx`, `perf/sla.toml` | JMeter plans: BlazeDemo journey (light load only) and the local sandbox (stress) | Yes, with JMeter |
-| `framework/perf/` | JTL statistics, SLA gate, telemetry sampler, load-vs-telemetry bottleneck report | Yes |
+| `perf/*.jmx`, `perf/sla.toml` | JMeter plans: BlazeDemo journey (light load only), the local sandbox (stress), and the sandbox load profile (open model, ramp-up/steady/ramp-down, abort rule) | Yes, with JMeter |
+| `perf/performance-test-plan.md`, `perf/workload.toml` | The performance test plan (ISTQB CT-PT chapter 4) and its operational → load profile | — |
+| `framework/perf/` | JTL statistics, SLA gate (steady-state window, response codes, executive summary), workload model (N = X(R+Z)), telemetry sampler, load-vs-telemetry bottleneck report | Yes |
 | `cloud/cloudformation/*.yaml` | Reference AWS design: ECR, S3, CloudWatch, ECS/Fargate, IAM, GitHub OIDC, budget; Device Farm project | Linted only (`cfn-lint`) |
 | `cloud/devicefarm/` | Device Farm test spec and test-package builder (wheels for the Amazon Linux 2 host) | Package builds here; the run needs AWS |
 | `.github/workflows/cloud.yml` | Reference cloud pipeline (OIDC, Fargate, Device Farm, gates, cleanup); skipped without AWS variables | Linted only (`actionlint`) |
@@ -336,7 +337,22 @@ the corrective action of Day 16. **BlazeDemo** is someone else's site: at most 1
 (`perf/blazedemo_purchase.jmx` defaults to 5 users, 2 minutes, 1–3 s think time, and a setUp
 guard refuses to start above 10 users or 5 minutes). Always pass `-q perf/jmeter.properties`: it pins
 the results columns the analysis reads. `tests/unit/test_jmeter_plans.py` checks every plan: bounded,
-property-driven, every request asserted, explicit timeouts, polite to third-party targets.
+property-driven, every request asserted, explicit timeouts, polite to third-party targets — and that
+the load-profile plan implements exactly the profile in `perf/workload.toml`.
+
+**Load profile (ISTQB CT-PT chapter 4)** — plan: `perf/performance-test-plan.md`:
+
+```bash
+python -m framework.perf.model perf/workload.toml
+```
+
+```bash
+jmeter -n -t perf/orders_sandbox_profile.jmx -q perf/jmeter.properties -l reports/perf/profile.jtl -e -o reports/perf/profile-html
+```
+
+```bash
+python -m framework.perf.gate reports/perf/profile.jtl --profile sandbox_profile --timeline-label "J2 Check order status"
+```
 
 ## Browser context defaults
 
@@ -415,7 +431,8 @@ The traceability matrix is printed after every run and written to
   coverage gate, then the events tests against the fixed build (oracle validation).
 - **container**: builds the image and runs the offline suite read-only, as Fargate would.
 - **performance**: JMeter 5.6.3 (SHA-512 verified) against the local sandbox, telemetry,
-  bottleneck report, SLA gate; the light BlazeDemo journey only on manual runs.
+  bottleneck report, SLA gate; then the load profile (ramp-up, steady state, ramp-down) with its
+  steady-state gate; the light BlazeDemo journey only on manual runs.
 - **cloud** (`cloud.yml`, manual, reviewer approval): OIDC → ECR → Fargate → Device Farm → gates → cleanup.
   Skipped unless the AWS repository variables exist.
 - **live** (main, nightly, or manual): smoke on push; nightly the full BDD regression

@@ -124,6 +124,17 @@ jobs:
         run: python -m framework.perf.correlate reports/perf/orders.jtl reports/perf/telemetry.csv
       - name: SLA gate
         run: python -m framework.perf.gate reports/perf/orders.jtl --profile sandbox
+      - name: "Load profile (CT-PT ch. 4): ramp-up 10 s, steady 30 s, ramp-down 10 s, operational mix"
+        run: |
+          python -m framework.perf.model perf/workload.toml >> "$GITHUB_STEP_SUMMARY"
+          "apache-jmeter-${JMETER_VERSION}/bin/jmeter" -n -t perf/orders_sandbox_profile.jmx -q perf/jmeter.properties \
+            -l reports/perf/profile.jtl -e -o reports/perf/profile-html \
+            -Jrampup=10 -Jsteady=30 -Jrampdown=10 -Jrun=ci-profile-${{ github.run_id }}
+      - name: Load-profile gate (steady state only)
+        run: |
+          python -m framework.perf.gate reports/perf/profile.jtl --profile sandbox_profile \
+            --skip-head 10 --skip-tail 10 --timeline-label "J2 Check order status"
+          cat reports/perf/gate-sandbox_profile.md >> "$GITHUB_STEP_SUMMARY"
       - name: Light BlazeDemo journey (manual runs only - someone else's site)
         if: github.event_name == 'workflow_dispatch' && inputs.blazedemo
         run: |

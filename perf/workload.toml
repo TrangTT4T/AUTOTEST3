@@ -1,0 +1,32 @@
+# Operational profile -> load profile for the order-events sandbox (ISTQB CT-PT 4.2.3, 4.2.4).
+#
+#   python -m framework.perf.model perf/workload.toml      # the derived load profile + JMeter command
+#
+# perf/orders_sandbox_profile.jmx uses these numbers as its property defaults, and
+# tests/unit/test_jmeter_plans.py fails if the plan and this file ever disagree (CT-PT 4.2.7:
+# scripts consistent with the plan and the load profile).
+
+[operational_profile]
+# Who does what at the peak hour. Here an ASSUMED mix for a small web shop; in a real project
+# it comes from access logs or analytics (e.g. "70 % of sessions only check an order").
+source = "assumed peak-hour mix (replace with access-log analysis)"
+
+[operational_profile.journeys.J1]
+name = "J1 Place order and track"
+share = 0.30
+response_s = 1.0      # planning estimate (objective in sla.toml); the measured value replaces it
+think_s = 0.0         # the customer watches the status page: no pause inside the journey
+
+[operational_profile.journeys.J2]
+name = "J2 Check order status"
+share = 0.70
+response_s = 0.05
+think_s = 2.0         # mean of the uniform 1-3 s think time in the plan
+
+[load_profile]
+# Open workload: journeys ARRIVE at this rate whether or not earlier ones finished (public web
+# traffic). Shape: ramp-up -> steady state -> ramp-down. Only the steady state is analysed.
+peak_journeys_per_s = 4.0
+rampup_s = 20
+steady_s = 60
+rampdown_s = 20

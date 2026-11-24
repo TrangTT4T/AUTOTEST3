@@ -70,6 +70,15 @@ Single-user timings, measured in the browser on every run (`perf-budgets.toml`).
 measurement covers the action **and** the visible result (e.g. click *Login* → products list
 visible), so it is what a user waits for.
 
+**Where this sits in ISTQB CT-PT.** These are **user-based objectives** (4.1.1) checked by
+single-user **transactions** (4.2.2) — each timed from the user's action to its visible result,
+with no think time inside. They are *not* a load test: there is no operational or load profile,
+no concurrency and no throughput objective, because Swag Labs is someone else's system. The full
+chapter-4 cycle (PTP, operational → load profile, ramp-up/steady/ramp-down, abort criteria,
+steady-state analysis) is done on a system we own: Unit 4, `perf/performance-test-plan.md` and
+Day 16 B7. Combining the two is exactly what CT-PT 4.3 recommends — run GUI scripts during a load
+test to measure the real user experience under load.
+
 **Network vs client split.** While an interaction runs, the browser monitor collects the
 browser's own start/end time of every request (`request.timing`). The union of those intervals
 inside the window is *network-busy time*; the rest is *client time* (JavaScript, rendering,

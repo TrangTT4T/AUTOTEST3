@@ -257,6 +257,69 @@ Properties make one plan serve every environment, for example `-Jusers=5 -Jdurat
 
 `tests/unit/test_jmeter_plans.py` applies these rules to every `perf/*.jmx`. Each rule was checked by breaking a copy of the BlazeDemo plan on purpose: 50 users, no think time, and a request without an assertion each fail with a clear message (`assert 50 <= 10`, `think time`, `requests without an assertion: ['GET /']`).
 
+
+### 3.8 🟡 → 🔴 Planning and designing a performance test (ISTQB CT-PT, chapter 4)
+
+The ISTQB *Performance Testing* syllabus (CT-PT) organises the work in four task groups:
+**4.1 planning → 4.2 analysis, design and implementation → 4.3 execution → 4.4 analysis and
+reporting**. This project's plan, `perf/performance-test-plan.md`, follows that structure; the
+lab on Day 16 (B7) runs one full cycle.
+
+**Objectives come in two kinds (4.1.1).** Keep them apart, and write down where each comes from:
+
+| Kind | Example in this project | Source |
+|---|---|---|
+| **User-based**: what a person feels | 95 % of orders shipped within 2 s; the status page answers within 0.3 s | requirement REQ-13, UX guideline |
+| **Technical**: what the system must sustain | 4 journeys/s at the peak with no dead letters; find the first saturated consumer | capacity plan, operations |
+
+**A performance test plan (PTP) (4.1.2)** covers: objectives, system overview, test types,
+acceptance criteria (SLA or baseline), test data (seeding, no personal data — GDPR), system
+configuration and environment (how it differs from production), tools, operational and load
+profiles, metrics, and the risks of the test itself. **Communicate it per audience (4.1.3):**
+business people need risk, cost and the SLA in one slide; engineers need the load model, the
+script design and why the result is repeatable.
+
+**Protocols (4.2.1).** Load tools speak the protocol of the layer under test: HTTP/HTTPS (web,
+REST/JSON — our sandbox and BlazeDemo), SOAP/XML web services, JDBC/ODBC straight to a database,
+WebSocket, MQTT/CoAP for IoT devices.
+
+**Transactions (4.2.2).** A transaction groups the requests of one user step and is timed as a
+unit. *Transaction response time* excludes the user's **think time**; *journey time* = response
+times + think times. **Nest** transactions to see both the whole and the parts:
+`J1 Place order and track` = `J1.1 Submit order` + `J1.2 Wait until shipped`. In JMeter, a
+Transaction Controller's *includeTimers* setting decides whether timers count.
+
+**Operational profile → load profile (4.2.3, 4.2.4).**
+
+| | Says | Example |
+|---|---|---|
+| **Operational profile** | who does what, in which proportion | 30 % place an order and track it, 70 % only check an order's status |
+| **Load profile** | how much, and when | 4 journeys/s; ramp-up 20 s → steady state 60 s → ramp-down 20 s |
+
+**Throughput vs concurrency (4.2.5).** Little's law (§3.3) with the think time made explicit —
+the *interactive response-time law*:
+
+> **X = N / (R + Z)**   and so   **N = X × (R + Z)**     (Z = think time)
+
+500 users each sending one query **a minute** produce 500/60 ≈ 8.3 queries/s (30 000 an hour);
+the same 500 users sending one query **an hour** produce 500 an hour. Same concurrency, 60 times
+less load: always state the rate, not only the number of users.
+`python -m framework.perf.model perf/workload.toml` does this arithmetic for the project's profile.
+
+**Script structure (4.2.6).** Every load script has three parts, whatever the tool:
+
+| Part | LoadRunner name | JMeter | Typical content |
+|---|---|---|---|
+| Initialisation | `vuser_init` | setUp thread group, Once Only Controller | validate the environment, log in, seed data |
+| Main | `Action` | thread group / Open Model Thread Group | the journeys, with timers, assertions, correlation |
+| Clean-up | `vuser_end` | tearDown thread group | log out, delete temporary data, verify the end state |
+
+Inside the main part: **timers** (think time, pacing), **verification** (assertions on every
+request) and **error handling** (what happens after a failed sample), **synchronisation points**
+(wait for an asynchronous state; JMeter's Synchronizing Timer releases users together for a
+spike), **correlation** (extract dynamic values such as ids or tokens) and **parameterisation**
+(different data per user, from a CSV file or a seeded list, to avoid cache and locking effects).
+
 ---
 
 ## Part 4 — Distributed workload 🟡 → 🔴
@@ -359,6 +422,9 @@ The surprise: **devices and anything left running cost far more than the contain
 8. What makes a cleanup step trustworthy?
 9. Which costs more: a 10-minute Fargate run or a 10-minute Device Farm run on two phones?
 10. Why not stress-test BlazeDemo?
+11. 300 users each search once every 30 s (response 0.5 s). What throughput do they generate? How many users produce 20 searches/s?
+12. Classify: "checkout within 2 s for 95 % of buyers" and "the database at 1 000 TPS with CPU below 80 %".
+13. Where does think time belong: inside or outside a transaction's response time? And in a "journey" transaction?
 
 <details>
 <summary><b>Answer guide</b></summary>
@@ -373,6 +439,9 @@ The surprise: **devices and anything left running cost far more than the contain
 8. It runs always (also after failures and cancels), is idempotent, has a timeout, and reports or verifies what it removed.
 9. Device Farm: 2 × 10 min × $0.17 = $3.40, against under one cent for Fargate.
 10. It is someone else's service. We have no agreement for heavy load, so the course keeps BlazeDemo to light, agreed-style load and does stress work on its own sandbox.
+11. X = N / (R + Z) = 300 / (0.5 + 30) ≈ 9.8 searches/s. For 20/s: N = 20 × 30.5 = 610 users.
+12. The first is a **user-based** objective (what buyers experience); the second is **technical** (what a component must sustain). A plan needs both, each with its source.
+13. Outside: response time is what the system makes the user wait. A journey-level transaction may include it on purpose, to measure how long the whole journey takes; say which one you report (JMeter: *includeTimers*).
 </details>
 
 ## Next: Day 15

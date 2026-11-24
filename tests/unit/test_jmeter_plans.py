@@ -60,7 +60,11 @@ def _domain(root: ET.Element) -> str:
 
 
 def test_there_are_plans() -> None:
-    assert [p.name for p in PLANS] == ["blazedemo_purchase.jmx", "orders_sandbox.jmx"]
+    assert [p.name for p in PLANS] == [
+        "blazedemo_purchase.jmx",
+        "orders_sandbox.jmx",
+        "orders_sandbox_profile.jmx",
+    ]
 
 
 @pytest.mark.parametrize("plan", PLANS, ids=lambda p: p.name)
@@ -68,7 +72,15 @@ def test_plan_is_bounded_and_property_driven(plan: Path) -> None:
     root = _tree(plan)
     assert root.get("jmeter") == "5.6.3", "plans are verified with JMeter 5.6.3"
     groups = list(root.iter("ThreadGroup"))
-    assert groups, "no thread group"
+    open_groups = list(root.iter("OpenModelThreadGroup"))
+    assert groups or open_groups, "no thread group"
+    for group in open_groups:
+        schedule = _prop(group, "OpenModelThreadGroup.schedule")
+        numbers = re.sub(r"\$\{__P\(\w+,[\d.]+\)\}", "", schedule)
+        assert not re.search(r"\d", numbers.replace("rate(0/s)", "")), (
+            f"{group.get('testname')}: every rate and duration in the schedule must be a property: {schedule}"
+        )
+        assert schedule.rstrip().endswith("rate(0/s)"), "the schedule must ramp down to zero"
     for group in groups:
         for name in ("ThreadGroup.num_threads", "ThreadGroup.ramp_time", "ThreadGroup.duration"):
             assert _prop(group, name).startswith("${__P("), (
@@ -134,3 +146,31 @@ def test_jtl_without_the_needed_columns_is_refused(tmp_path: Path) -> None:
     path.write_text("timeStamp,elapsed,label\n1,2,x\n", encoding="utf-8")
     with pytest.raises(ValueError, match=r"missing JTL columns \['responseCode', 'success', 'allThreads'\]"):
         read_jtl(path)
+
+
+def test_load_profile_plan_matches_the_workload_model() -> None:
+    """CT-PT 4.2.7: the script implements the load profile of the plan, not numbers of its own."""
+    from framework.perf.model import jmeter_properties, load_workload  # noqa: PLC0415 - kept next to the rule
+
+    plan = (ROOT / "perf" / "orders_sandbox_profile.jmx").read_text(encoding="utf-8")
+    expected = jmeter_properties(load_workload(ROOT / "perf" / "workload.toml"))
+    defaults = dict(re.findall(r"\$\{__P\((\w+),([\d.]+)\)\}", plan))
+    assert {key: defaults.get(key) for key in expected} == expected
+
+
+def test_load_profile_plan_prepares_validates_and_cleans_up() -> None:
+    """CT-PT 4.2.6/4.2.8: init (validate, seed data), action, end (verify), and a stop rule."""
+    root = _tree(ROOT / "perf" / "orders_sandbox_profile.jmx")
+    setup = next(root.iter("SetupThreadGroup"))
+    assert _prop(setup, "ThreadGroup.on_sample_error") == "stoptest", "an invalid environment stops the test"
+    assert list(root.iter("PostThreadGroup")), "a tearDown group verifies the end state"
+    listeners = [_prop(e, "script") for e in root.iter("JSR223Listener")]
+    assert any("abort_error_pct" in script for script in listeners), (
+        "an abort criterion watches the error rate"
+    )
+    names = [t.get("testname") for t in root.iter("TransactionController")]
+    assert {"J1 Place order and track", "J1.1 Submit order", "J1.2 Wait until shipped"} <= set(names)
+    think = [t for t in root.iter("TransactionController") if t.get("testname") == "J2 Check order status"]
+    assert _prop(think[0], "TransactionController.includeTimers") == "false", (
+        "think time is not response time"
+    )

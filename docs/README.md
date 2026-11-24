@@ -39,6 +39,7 @@ objects) match the root code line for line. Test counts in verification logs are
 | Known defects are strict, registered tripwires that fail when the defect disappears | `xfail(strict=True, raises=AssertionError)`, `framework/events/findings.py` |
 | Defect tests pass on the fixed build (oracle validation) | `--sandbox-build fixed` in CI |
 | Cloud configuration and workflows: no high-severity findings | `cfn-lint`, `actionlint` + shellcheck, `python -m framework.cloud.audit` |
-| Performance objectives, failing closed on missing evidence | `python -m framework.perf.gate` |
+| Performance objectives, failing closed on missing evidence; judged on the steady state | `python -m framework.perf.gate` (`[steady_state.*]` in `perf/sla.toml`) |
+| The load-profile script implements the planned load profile (ISTQB CT-PT 4.2.7) | `tests/unit/test_jmeter_plans.py` against `perf/workload.toml` |
 | JMeter plans: bounded, property-driven, every request asserted, explicit timeouts, polite to third-party sites (with a setUp guard); results format pinned | `tests/unit/test_jmeter_plans.py`, `-q perf/jmeter.properties` |
 | Playwright: one place for page and `expect` timeouts, aligned with `--ui-timeout` | `configure_page`, `_expect_timeout`, an architecture test |
