@@ -32,7 +32,12 @@ markers = [
 # assertions have their own, much shorter timeouts (--ui-timeout). This catches the rare HANG
 # (a deadlock, an unbounded wait) and fails that test with a stack trace instead of stalling the
 # CI job until its job timeout. The slowest test today takes ~25 s; raise this only with evidence.
+# A test that is slow on purpose gets its own limit, @pytest.mark.timeout(seconds) (Playwright's
+# test.slow / test.setTimeout); none needs one today.
 timeout = 90
+# Every xfail is strict, even one written without strict=True (also enforced by an architecture
+# test): an expected failure that starts passing means the defect is fixed - update the register.
+xfail_strict = true
 log_level = "INFO"
 log_format = "%(asctime)s %(levelname)-5s %(name)s: %(message)s"
 log_date_format = "%H:%M:%S"

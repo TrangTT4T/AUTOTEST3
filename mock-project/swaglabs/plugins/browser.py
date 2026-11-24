@@ -16,6 +16,7 @@ from swaglabs.config import Settings
 from swaglabs.domain import Catalogue, reference_catalogue
 from swaglabs.evidence import redact, slug
 from swaglabs.network import BrowserMonitor
+from swaglabs.plugins.trace_steps import remember_page
 
 log = logging.getLogger("swaglabs.bdd")
 PERF_PROPERTY = "perf"
@@ -39,6 +40,16 @@ def _expect_timeout(pytestconfig: pytest.Config) -> None:
 
 
 @pytest.fixture(scope="session")
+def delete_output_dir() -> None:
+    """Replaces pytest-playwright's clean-up of ``--output`` (reports/artifacts) with nothing.
+
+    Theirs is a session fixture, i.e. it runs once PER xdist WORKER, at that worker's first test: a
+    late worker can delete traces that a faster worker has already saved. The controller empties
+    ``reports/`` once, before any worker starts (plugins/reporting.py), so this is not needed.
+    """
+
+
+@pytest.fixture(scope="session")
 def browser_context_args(browser_context_args: dict[str, Any]) -> dict[str, Any]:
     """Pin locale and time zone: identical formats and headers on every machine and in CI."""
     return {**browser_context_args, "locale": "en-US", "timezone_id": "UTC"}
@@ -59,6 +70,7 @@ def shop(
     perf = PerfRecorder(monitor, test=request.node.nodeid)
     app = SwagLabs(page, settings, catalogue, monitor, perf)
     request.node.stash[SHOP_KEY] = app
+    remember_page(request.node, page)  # each Gherkin step becomes a group in the trace
     yield app
     # Measurements travel to the xdist controller inside the test report.
     request.node.user_properties.append((PERF_PROPERTY, [m.as_dict() for m in perf.measurements]))

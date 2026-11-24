@@ -123,7 +123,7 @@ playwright show-trace reports/artifacts/<test-folder>/trace.zip
 
 ### 1.5 🔴 Tracing with structure, and with care
 
-- **Group actions into business steps.** `context.tracing.group("Add Grey jacket to cart")` … `group_end()` (available in 1.63) makes the trace read like the scenario. A BDD hook can open one group per Gherkin step.
+- **Group actions into business steps.** `context.tracing.group("Add Grey jacket to cart")` … `group_end()` (available in 1.63) makes the trace read like the scenario — Python's counterpart of Playwright's `test.step`. For BDD this is automatic: `framework/plugins/trace_steps.py` opens one group per Gherkin step in `pytest_bdd_before_step_call` (after the step's fixtures exist, so the step that starts the browser is grouped too) and closes it after the step, also when it fails.
 - **Long sessions** can be split into chunks (`start_chunk` / `stop_chunk`), one trace per logical part.
 - **Traces are sensitive.** They contain everything the page showed and every request body — including typed passwords and tokens. Store them like logs with personal data: limited retention (the course CI keeps 14 days), limited access, never attached to public tickets.
 - **Tracing every test has a cost** (time and disk). Use `on` while debugging locally, `retain-on-failure` in CI.

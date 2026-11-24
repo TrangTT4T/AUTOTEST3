@@ -1,10 +1,16 @@
-"""pytest plugin: step logging and business-level failure evidence."""
+"""pytest plugin: step logging and business-level failure evidence.
+
+Global setup, once per run: the controller removes what an EARLIER pytest run left in reports/
+(see ``RUN_OUTPUTS``) before any xdist worker starts, so evidence folders, logs and traces always
+belong to this run. Outputs of other tools (perf/, coverage.xml, audit.md, ...) are not touched.
+"""
 
 from __future__ import annotations
 
 import json
 import logging
 import re
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +19,42 @@ import pytest
 from framework.adapters.web.store import WebStore
 
 log = logging.getLogger("shop.bdd")
+
+# What pytest writes under reports/ (``artifacts`` is pytest-playwright's --output).
+RUN_OUTPUTS = ("evidence", "events", "mobile", "artifacts", "traceability.csv", "traceability.md")
+
+
+def reset_run_outputs(reports: Path) -> list[str]:
+    """Delete this suite's outputs of an earlier run. Idempotent; returns what was removed."""
+    removed = []
+    for name in RUN_OUTPUTS:
+        path = reports / name
+        if path.is_dir() and not path.is_symlink():
+            shutil.rmtree(path)
+        elif path.exists() or path.is_symlink():
+            path.unlink()
+        else:
+            continue
+        removed.append(name)
+    return removed
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    # The controller configures before any worker exists; a worker must never do this, or it would
+    # delete what faster workers have already written.
+    if hasattr(config, "workerinput") or config.option.collectonly:
+        return
+    reset_run_outputs(Path(config.rootpath, "reports"))
+
+
+@pytest.fixture(scope="session")
+def delete_output_dir() -> None:
+    """Replaces pytest-playwright's clean-up of ``--output`` (reports/artifacts) with nothing.
+
+    Theirs is a session fixture, i.e. it runs once PER xdist WORKER, at that worker's first test: a
+    late worker can delete traces that a faster worker has already saved. ``pytest_configure``
+    above cleans reports/artifacts once, before any worker starts.
+    """
 
 
 def _slug(text: str) -> str:

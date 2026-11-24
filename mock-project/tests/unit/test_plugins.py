@@ -169,3 +169,19 @@ def test_broken_tags_stop_the_run_before_anything_executes(project: pytest.Pytes
     result = project.runpytest()
     assert result.ret == pytest.ExitCode.USAGE_ERROR
     result.stderr.fnmatch_lines(["*Tag rules broken*", "*@risk-low but the registry says high*"])
+
+
+def test_reports_hold_exactly_one_run(project: pytest.Pytester) -> None:
+    """The controller empties reports/ before the run: nothing from an earlier run is signed as ours."""
+    stale = project.path / "reports" / "evidence" / "an_old_failure"
+    stale.mkdir(parents=True)
+    (stale / "step.png").write_bytes(b"old")
+    (project.path / "reports" / "log-gw7.jsonl").write_text("{}", encoding="utf-8")
+
+    project.runpytest("--persona", "problem_user")
+
+    manifest = json.loads((project.path / "reports" / "manifest.json").read_text(encoding="utf-8"))
+    assert not stale.exists()
+    assert not (project.path / "reports" / "log-gw7.jsonl").exists()
+    assert not [name for name in manifest["files"] if "an_old_failure" in name or "gw7" in name]
+    assert "log-main.jsonl" in manifest["files"]

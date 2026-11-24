@@ -20,7 +20,7 @@ from typing import Any
 import pytest
 
 from swaglabs.config import Settings
-from swaglabs.evidence import JsonLineFormatter, RedactingFilter, run_record, write_manifest
+from swaglabs.evidence import JsonLineFormatter, RedactingFilter, reset_folder, run_record, write_manifest
 from swaglabs.perf import Measurement, load_budgets, summarise
 from swaglabs.perf import to_markdown as perf_markdown
 from swaglabs.plugins.browser import PERF_PROPERTY
@@ -60,8 +60,12 @@ def pytest_configure(config: pytest.Config) -> None:
     folder = reports_dir(config)
     password = Settings.from_pytest(config).password
     try:
+        if worker == "main":
+            # Global setup, once per run: the controller configures before any xdist worker exists.
+            # A worker must never do this - it would delete what faster workers already wrote.
+            reset_folder(folder)
         folder.mkdir(exist_ok=True)
-        handler = logging.FileHandler(folder / f"log-{worker}.jsonl", encoding="utf-8")
+        handler = logging.FileHandler(folder / f"log-{worker}.jsonl", mode="w", encoding="utf-8")
     except OSError as error:
         # Fail before any test runs: a run whose evidence cannot be written is not worth starting.
         raise pytest.UsageError(

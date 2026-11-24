@@ -38,7 +38,8 @@ reviewers, OIDC instead of long-lived keys, and a self-hosted runner in a privat
 - **Verified instruments.** The performance monitor was cross-checked against an independent
   timeline and corrected (see 04).
 - **Diagnosability.** Every failed step leaves screenshot, HTML, trace, console errors and
-  dialogs; `run.json` says exactly what ran.
+  dialogs; `run.json` says exactly what ran. In the trace every Gherkin step is a named group of
+  its browser actions (`swaglabs/plugins/trace_steps.py`), so the failing step is found at a glance.
 
 Accepted weakness: the system under test is a public site we do not control. A Sauce Labs
 deployment can change behaviour overnight; the nightly run detects it, and the strict register
@@ -94,7 +95,10 @@ the same scenarios that pass for `standard_user`.
 the order of names is deterministic and is what the sort actually changes.
 
 **Why strict xfail and not skip?** A skip hides the defect and never notices the fix. A strict
-xfail reports KNOWN DEFECT in the matrix and goes red when the defect disappears.
+xfail reports KNOWN DEFECT in the matrix and goes red when the defect disappears. (Playwright's
+`test.fixme` skips a known bug; we deliberately do not.) The only skip is "not applicable" - a
+`@manual` scenario, with its reason. An architecture test rejects a skip or xfail without a
+reason, and an xfail that is not strict.
 
 **Where is the bottleneck of performance_glitch_user?** In the browser: ~5.1 s with the network
 idle > 90 % of the time and no request at all during sorting; other interactions are normal.

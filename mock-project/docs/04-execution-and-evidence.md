@@ -53,6 +53,13 @@ quality ──► e2e matrix (8 containers in parallel) ──► quality-matrix
 Every job uploads `reports/` as an artifact named after its persona and browser, retained 14
 days; the merged `quality-matrix` is retained 30 days.
 
+`reports/` is the evidence of exactly one run. The controller empties it once, before any xdist
+worker starts — a *global setup*: a session fixture would run once per worker, and a late worker
+would delete what faster ones already wrote (which is why pytest-playwright's own per-worker
+clean-up of `reports/artifacts` is switched off). Without it, a second local run appended to the
+old `log-*.jsonl` files and kept old `evidence/` folders, and the manifest signed them as this
+run's. In CI every job starts from an empty folder anyway; the reset makes local runs match.
+
 | File | Content | Used for |
 |---|---|---|
 | `traceability.md/.json` | requirement → scenarios → outcomes → status | release decision, merged matrix |

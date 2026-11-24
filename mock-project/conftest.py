@@ -3,6 +3,7 @@
 pytest_plugins = [
     "swaglabs.plugins.registry",
     "swaglabs.plugins.findings",
+    "swaglabs.plugins.trace_steps",  # before browser, which imports it
     "swaglabs.plugins.browser",
     "swaglabs.plugins.reporting",
     "tests.steps.memo",

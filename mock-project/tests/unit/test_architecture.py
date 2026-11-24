@@ -148,3 +148,69 @@ def test_no_password_in_feature_files_or_docs() -> None:
     texts = [*(ROOT / "features").rglob("*.feature"), *(ROOT / "docs").rglob("*.md")]
     leaks = [p.name for p in texts if PUBLIC_DEMO_PASSWORD in p.read_text(encoding="utf-8")]
     assert leaks == [], "feature files say (valid); docs say 'the password shown on the login page'"
+
+
+# Skip / xfail hygiene (Playwright's anti-patterns: a skip without a reason; a skip where a known
+# bug should be tracked). Python has no ``test.fixme``: a known defect is a STRICT xfail limited to
+# AssertionError, so it keeps running and goes red when the defect is fixed or the failure changes.
+_SKIP_MARKS = {"pytest.mark.skip", "pytest.mark.skipif", "pytest.mark.xfail"}
+
+
+def _skip_call_problems(call: ast.Call) -> list[str]:
+    name = ast.unparse(call.func)
+    keywords = {k.arg: k.value for k in call.keywords}
+    if name == "pytest.xfail":
+        return ["pytest.xfail() stops the test and never sees the fix"]
+    if name == "pytest.skip":
+        reason = call.args[0] if call.args else keywords.get("reason")
+    elif name in _SKIP_MARKS:
+        reason = keywords.get("reason")
+    else:
+        return []
+    problems = []
+    if reason is None or (isinstance(reason, ast.Constant) and not str(reason.value).strip()):
+        problems.append(f"{name} without a reason")
+    if name == "pytest.mark.xfail":
+        strict = keywords.get("strict")
+        if not (isinstance(strict, ast.Constant) and strict.value is True):
+            problems.append("xfail must be strict=True (a fix must turn the run red)")
+        if "raises" not in keywords:
+            problems.append("xfail must name raises= (other failures must surface)")
+    return problems
+
+
+def _unexplained_skips(source: str) -> list[str]:
+    problems = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+            bare = [d for d in node.decorator_list if ast.unparse(d) in _SKIP_MARKS]
+            problems += [f"line {d.lineno}: @{ast.unparse(d)} without a reason" for d in bare]
+        elif isinstance(node, ast.Call):
+            problems += [f"line {node.lineno}: {problem}" for problem in _skip_call_problems(node)]
+    return problems
+
+
+def test_the_skip_rule_catches_unexplained_skips() -> None:
+    sample = (
+        "import pytest\n"
+        "@pytest.mark.skip\n"  # 2: bare
+        "def a(): pytest.skip()\n"  # 3: no reason
+        "@pytest.mark.skipif(True, reason='')\n"  # 4: empty reason
+        "def b(): pytest.xfail('bug')\n"  # 5: imperative xfail
+        "@pytest.mark.xfail(reason='bug #1')\n"  # 6: not strict, no raises
+        "def c(): pytest.skip('no sold-out product right now')\n"  # fine
+        "@pytest.mark.xfail(strict=True, raises=AssertionError, reason='bug #2')\n"  # fine
+        "def d(): pass\n"
+    )
+    lines = sorted(int(p.split()[1].rstrip(":")) for p in _unexplained_skips(sample))
+    assert lines == [2, 3, 4, 5, 6, 6]
+
+
+def test_every_skip_and_xfail_says_why() -> None:
+    problems = [
+        f"{path.relative_to(ROOT).as_posix()} {problem}"
+        for folder in ("swaglabs", "tests")
+        for path in sorted((ROOT / folder).rglob("*.py"))
+        for problem in _unexplained_skips(path.read_text(encoding="utf-8"))
+    ]
+    assert not problems, "\n".join(problems)

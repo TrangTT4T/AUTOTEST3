@@ -3,11 +3,14 @@
 Pure logic, unit-tested. swaglabs/plugins/evidence.py wires it into pytest.
 
 What a reviewer gets for every run (``reports/``):
-    log.jsonl         one JSON object per log line, secrets masked
+    log-<worker>.jsonl  one JSON object per log line, secrets masked
     run.json          who/what/where: persona, browser, versions, commit, outcome counts
     evidence/<test>/  for each failed step: screenshot, page HTML, console errors, dialogs
     artifacts/        Playwright traces and screenshots of failed tests
     manifest.json     SHA-256 of every file above, so a copied report can be verified
+
+``reports/`` is the evidence of exactly ONE run: ``reset_folder`` empties it once, on the controller,
+before any worker starts (a global setup), so nothing from an earlier run is fingerprinted as ours.
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ import hashlib
 import json
 import logging
 import re
+import shutil
 import sys
 from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
@@ -25,6 +29,19 @@ from typing import Any
 MASK = "***"
 MANIFEST = "manifest.json"
 _SLUG = re.compile(r"[^A-Za-z0-9._-]+")
+
+
+def reset_folder(folder: Path) -> None:
+    """Empty ``folder``, keeping the folder itself (in a container it is a mounted volume).
+
+    Idempotent: safe on a missing, an empty or a half-written folder (a crashed earlier run).
+    """
+    folder.mkdir(parents=True, exist_ok=True)
+    for entry in folder.iterdir():
+        if entry.is_dir() and not entry.is_symlink():
+            shutil.rmtree(entry)
+        else:
+            entry.unlink()
 
 
 def slug(text: str, limit: int = 100) -> str:

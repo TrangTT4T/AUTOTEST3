@@ -18,6 +18,7 @@ from framework.adapters.web.store import WebStore
 from framework.config import Settings, add_options
 from framework.domain import Catalogue
 from framework.errors import EnvironmentBlockedError
+from framework.plugins.trace_steps import remember_page
 from framework.ports import Store
 
 
@@ -89,6 +90,7 @@ def store(request: pytest.FixtureRequest, settings: Settings) -> Iterator[Store]
     page = configure_page(request.getfixturevalue("page"), settings)  # fresh browser context per test
     diagnostics = BrowserDiagnostics(settings.base_url)
     diagnostics.attach(page)
+    remember_page(request.node, page)  # each Gherkin step becomes a group in the trace
     yield WebStore(page, request.getfixturevalue("live_catalogue"), diagnostics)
     # No clean-up request: the browser context (and its cart) is discarded by pytest-playwright.
 

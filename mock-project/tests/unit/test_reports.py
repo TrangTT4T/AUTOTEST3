@@ -14,6 +14,7 @@ from swaglabs.evidence import (
     RedactingFilter,
     build_manifest,
     redact,
+    reset_folder,
     run_record,
     slug,
     verify_manifest,
@@ -219,6 +220,27 @@ class TestEvidence:
         clean = logging.LogRecord("swaglabs", logging.INFO, __file__, 1, "nothing %s", ("here",), None)
         RedactingFilter(["hunter2"]).filter(clean)
         assert clean.args == ("here",)
+
+    def test_reset_folder_empties_it_keeps_it_and_never_follows_links(self, tmp_path: Path) -> None:
+        reports = tmp_path / "reports"
+        (reports / "evidence" / "old_test").mkdir(parents=True)
+        (reports / "evidence" / "old_test" / "step.png").write_bytes(b"png")
+        (reports / "log-gw7.jsonl").write_text("{}", encoding="utf-8")
+        outside = tmp_path / "keep"
+        outside.mkdir()
+        (outside / "precious.txt").write_text("x", encoding="utf-8")
+        (reports / "link").symlink_to(outside, target_is_directory=True)
+
+        reset_folder(reports)
+        reset_folder(reports)  # idempotent
+
+        assert reports.is_dir()
+        assert list(reports.iterdir()) == []
+        assert (outside / "precious.txt").is_file()  # the link was removed, not its target
+
+    def test_reset_folder_creates_a_missing_folder(self, tmp_path: Path) -> None:
+        reset_folder(tmp_path / "reports")
+        assert (tmp_path / "reports").is_dir()
 
     def test_manifest_detects_changes(self, tmp_path: Path) -> None:
         (tmp_path / "evidence").mkdir()
