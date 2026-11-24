@@ -32,9 +32,9 @@ class ProductGrid:
         return [card.name for card in self.read()]
 
     def open(self, name: str) -> None:
-        self.cards.filter(
-            has=self.page.locator(self._card_name_exact.format(name=quoted(name)))
-        ).first.click()
+        # No .first: one card per product (checked live); two would be a strict-mode error, not a
+        # silent pick of whichever comes first.
+        self.cards.filter(has=self.page.locator(self._card_name_exact.format(name=quoted(name)))).click()
         self.page.wait_for_url("**/products/**")
 
     # --- Locators -------------------------------------------------------------

@@ -57,7 +57,7 @@ jobs:
         working-directory: .
         run: actionlint .github/workflows/mock-project.yml
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: unit-coverage
           path: mock-project/reports/coverage.xml
@@ -112,7 +112,7 @@ jobs:
             if [ -f "$f" ]; then cat "$f" >> "$GITHUB_STEP_SUMMARY"; fi
           done
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: reports-${{ matrix.label }}
           path: mock-project/reports
@@ -132,7 +132,7 @@ jobs:
       - name: Merge the runs into one quality matrix (fails on any unexpected failure)
         run: python3 -m swaglabs.matrix all-reports/*/traceability.json | tee quality-matrix.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: quality-matrix
           path: mock-project/quality-matrix.md

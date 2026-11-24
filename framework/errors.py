@@ -6,6 +6,8 @@ The type of an exception decides how a failure is reported:
 * ``DataUnavailableError``     -> the test data a scenario needs does not exist.
 * ``CartInconsistencyError``   -> a product defect: two layers of the shop disagree.
 * ``NotSupportedOnPlatformError`` -> a scenario asked a platform for a feature it does not have.
+* ``AmbiguousTargetError``     -> a step named one thing ("the Grey jacket line") but it matches
+                                  several or none: the scenario is ambiguous, not the product wrong.
 * ``ApiRequestError``          -> an API client got a status the framework did not expect: our
                                   request or set-up is wrong. API clients never raise AssertionError.
 * any other ``AssertionError`` -> a product defect found by a ``Then`` step.
@@ -26,6 +28,14 @@ class DataUnavailableError(FrameworkError):
 
 class NotSupportedOnPlatformError(FrameworkError):
     """The product on this platform has no such feature (e.g. the mobile app has no search)."""
+
+
+class AmbiguousTargetError(FrameworkError):
+    """A step addressed one item, but its description matches several (or none).
+
+    Never an AssertionError: a strict xfail must not mistake a badly specified scenario for the
+    known defect it is waiting for.
+    """
 
 
 class ApiRequestError(FrameworkError):

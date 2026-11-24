@@ -15,6 +15,7 @@ from types import MappingProxyType
 from typing import ClassVar
 
 from framework.domain import Cart, CartLine, Catalogue, Money, OrderSummary, Product, ProductCard
+from framework.errors import AmbiguousTargetError
 
 DATA = Path(__file__).resolve().parents[2] / "tests" / "data"
 DEFAULT_SNAPSHOT = DATA / "catalogue_snapshot.json"  # the web shop (GBP)
@@ -87,15 +88,15 @@ class FakeStore:
 
     def set_quantity(self, name: str, quantity: int) -> None:
         keys = [key for key in self._lines if key[0] == name]
-        if not keys:
-            return
-        first, *others = keys
-        for key in others:
-            del self._lines[key]
+        if len(keys) != 1:  # same rule as the web cart: one line, or the request is ambiguous
+            raise AmbiguousTargetError(
+                f"{name!r} has {len(keys)} lines in the cart; this action needs exactly one "
+                "(with several variants, address one variant)"
+            )
         if quantity <= 0:  # like Shopify: quantity 0 removes the line
-            del self._lines[first]
+            del self._lines[keys[0]]
         else:
-            self._lines[first] = quantity
+            self._lines[keys[0]] = quantity
 
     def remove(self, name: str) -> None:
         for key in [key for key in self._lines if key[0] == name]:

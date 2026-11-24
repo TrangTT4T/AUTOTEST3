@@ -21,7 +21,15 @@ from framework.adapters.web.store import WebStore
 log = logging.getLogger("shop.bdd")
 
 # What pytest writes under reports/ (``artifacts`` is pytest-playwright's --output).
-RUN_OUTPUTS = ("evidence", "events", "mobile", "artifacts", "traceability.csv", "traceability.md")
+RUN_OUTPUTS = (
+    "evidence",
+    "events",
+    "mobile",
+    "artifacts",
+    "traceability.csv",
+    "traceability.md",
+    "junit.xml",
+)
 
 
 def reset_run_outputs(reports: Path) -> list[str]:

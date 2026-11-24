@@ -111,7 +111,7 @@ jobs:
             aws ecs stop-task --cluster "${{ vars.ECS_CLUSTER }}" --task "$TASK_ARN" --reason "pipeline cleanup"
           fi
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: fargate-evidence
           path: evidence/
@@ -192,7 +192,7 @@ jobs:
             [ -n "$arn" ] && aws devicefarm delete-upload --arn "$arn" || true
           done
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: device-farm-evidence
           path: evidence/

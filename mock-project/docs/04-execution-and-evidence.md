@@ -65,6 +65,7 @@ run's. In CI every job starts from an empty folder anyway; the reset makes local
 | `traceability.md/.json` | requirement → scenarios → outcomes → status | release decision, merged matrix |
 | `perf.md/.json` | every timed interaction, budget verdict, bottleneck | performance trend, SL-11 |
 | `run.json` | persona, browser, device, versions, commit, run id, outcome counts, duration | reproducing a run |
+| `junit.xml` | one `<testcase>` per scenario (pytest `--junit-xml`) | any CI's test tab (Jenkins, Azure DevOps, GitLab); JUnit has no "known defect": a strict xfail appears as *skipped* there, so `traceability.json` stays the release record |
 | `log-<worker>.jsonl` | one JSON object per log line, password masked | searching what happened |
 | `evidence/<test>/` | screenshot, page HTML, JSON (step, error, URL, console errors, dialogs, blocked hosts) | debugging a failed step |
 | `artifacts/<test>/trace.zip` | Playwright trace (DOM, network, actions) of failed tests | time-travel debugging (`playwright show-trace`) |

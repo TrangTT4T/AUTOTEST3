@@ -2,8 +2,11 @@
 
 from decimal import Decimal
 
+import pytest
+
 from framework.adapters.fake import FakeStore
 from framework.domain import Money
+from framework.errors import AmbiguousTargetError
 from framework.ports import Store
 
 
@@ -52,3 +55,18 @@ def test_checkout_summary_mirrors_the_cart_with_uk_vat() -> None:
     assert summary.quantities() == {"Grey jacket": 2}
     assert summary.total == Money(Decimal("110.00"))
     assert summary.included_tax == Money(Decimal("18.33"))  # observed live for £110
+
+
+@pytest.mark.parametrize(
+    "variants",
+    [[], ["L / Red", "S / Blue"]],
+    ids=["not-in-cart", "two-variants"],
+)
+def test_set_quantity_needs_exactly_one_line(variants: list[str]) -> None:
+    """Like the web cart: one locator must mean one line, never "whichever comes first"."""
+    store = FakeStore.from_snapshot()
+    for variant in variants:
+        store.add_variant("Noir jacket", variant)
+    with pytest.raises(AmbiguousTargetError, match=f"has {len(variants)} lines"):
+        store.set_quantity("Noir jacket", 3)
+    assert store.cart().quantity_of("Noir jacket") == len(variants)  # nothing changed

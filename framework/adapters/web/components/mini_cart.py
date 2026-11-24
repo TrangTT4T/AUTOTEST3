@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from playwright.sync_api import Page, expect
 
-from framework.adapters.web.components.cart_rows import read_rows
+from framework.adapters.web.components.cart_rows import read_rows, the_only_row
 from framework.adapters.web.components.header import Header
 from framework.domain import Cart, Catalogue, Money
 
@@ -39,7 +39,8 @@ class MiniCart:
 
     def remove(self, name: str) -> None:
         handle = self._catalogue.by_name(name).handle
-        row = self.rows.filter(has=self.page.locator(self._row_product_link.format(handle=handle))).first
+        rows = self.rows.filter(has=self.page.locator(self._row_product_link.format(handle=handle)))
+        row = the_only_row(rows, name)
         with self.page.expect_response(lambda r: "/cart/change" in r.url):
             row.locator(self._row_remove_link).click()
 

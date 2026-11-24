@@ -17,6 +17,8 @@ addopts = [
     "--screenshot=only-on-failure",
     "--tracing=retain-on-failure",
     "--output=reports/artifacts",
+    # Machine-readable results for any CI (Jenkins, Azure DevOps, GitLab read JUnit XML natively).
+    "--junit-xml=reports/junit.xml",
 ]
 markers = [
     "smoke: fast critical checks, run on every change",

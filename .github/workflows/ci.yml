@@ -53,10 +53,11 @@ jobs:
       - name: Cloud configuration audit (policy as code), fail on high
         run: python -m framework.cloud.audit cloud .github/workflows --fail-on high
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: offline-reports
           path: reports/
+          retention-days: 14
 
   container:
     name: Container image - build, run the offline suite read-only
@@ -74,10 +75,11 @@ jobs:
             -v "$PWD/archive:/archive" -e RUN_ID=ci-${{ github.run_id }} \
             shop-bdd-tests:${{ github.sha }} --suite offline --artifacts /archive
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: container-run-artifacts
           path: archive/
+          retention-days: 14
 
   performance:
     name: Performance - sandbox smoke load + SLA gate
@@ -142,7 +144,7 @@ jobs:
             -l reports/perf/blazedemo.jtl -e -o reports/perf/blazedemo-html -Jusers=5 -Jduration=120
           python -m framework.perf.gate reports/perf/blazedemo.jtl --profile blazedemo
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: performance-reports
           path: reports/perf/
@@ -169,7 +171,7 @@ jobs:
           pytest tests/test_*.py tests/e2e ${{ github.event_name == 'schedule' && 'tests/pages' || '' }}
           -m "${{ github.event_name == 'schedule' && 'not manual' || 'smoke or p1' }}"
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: live-reports
           path: reports/

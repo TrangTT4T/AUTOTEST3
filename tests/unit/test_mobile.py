@@ -13,11 +13,12 @@ from framework.adapters.mobile.capabilities import APP_ACTIVITY, APP_PACKAGE, an
 from framework.adapters.mobile.evidence import safe_capabilities
 from framework.adapters.mobile.locators import Locator
 from framework.adapters.mobile.screens import ALL_SCREENS
+from framework.adapters.mobile.screens.cart import CartScreen
 from framework.adapters.mobile.session import is_environment_problem
 from framework.adapters.mobile.store import MobileStore
 from framework.config import Settings
 from framework.domain import Cart, CartLine, Catalogue, Money
-from framework.errors import CartInconsistencyError
+from framework.errors import AmbiguousTargetError, CartInconsistencyError
 
 INVENTORY = json.loads((Path(__file__).parents[1] / "data" / "mobile_ui_inventory.json").read_text("utf-8"))
 
@@ -148,3 +149,20 @@ def test_inconsistent_cart_screen_is_a_defect(cart: Cart, badge: int, label: int
 def test_secrets_are_masked_in_reported_capabilities() -> None:
     caps = safe_capabilities({"appium:deviceName": "Pixel", "sauce:accessKey": "abc", "appium:password": "x"})
     assert caps == {"appium:deviceName": "Pixel", "sauce:accessKey": "***", "appium:password": "***"}
+
+
+class _Title:
+    """A line title as Appium returns it (only what CartScreen._row_for reads)."""
+
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+
+@pytest.mark.parametrize("lines", [[], ["Sauce Labs Backpack", "Sauce Labs Backpack"]], ids=["none", "two"])
+def test_a_cart_line_is_addressed_only_when_it_is_unique(
+    lines: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    screen = CartScreen.__new__(CartScreen)  # no driver: only the matching rule is under test
+    monkeypatch.setattr(screen, "_rows", lambda: [_Title(text) for text in lines])
+    with pytest.raises(AmbiguousTargetError, match=f"has {len(lines)} lines"):
+        screen._row_for("Sauce Labs Backpack")

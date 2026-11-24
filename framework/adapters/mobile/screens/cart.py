@@ -8,6 +8,7 @@ from framework.adapters.mobile.locators import by_accessibility_id, by_id, by_xp
 from framework.adapters.mobile.screens.base import Screen, number
 from framework.adapters.mobile.waits import wait_until
 from framework.domain import Cart, CartLine, Money
+from framework.errors import AmbiguousTargetError
 
 
 class CartScreen(Screen):
@@ -46,10 +47,15 @@ class CartScreen(Screen):
         return number(self.visible(self._items).text)
 
     def _row_for(self, name: str) -> WebElement:
-        for title in self._rows():
-            if title.text.strip() == name:
-                return self._row_of(title)
-        raise AssertionError(f"{name!r} is not in the cart")
+        """The single line of ``name``: several lines (e.g. two colours) or none are ambiguous.
+
+        Not the first match: that would silently act on one line and leave the others; and not an
+        AssertionError, which this project reserves for product defects.
+        """
+        titles = [title for title in self._rows() if title.text.strip() == name]
+        if len(titles) != 1:
+            raise AmbiguousTargetError(f"{name!r} has {len(titles)} lines in the cart; expected exactly one")
+        return self._row_of(titles[0])
 
     def remove(self, name: str) -> None:
         before = self.cart_count()

@@ -36,7 +36,8 @@ class BlogPage(BasePage):
         return result
 
     def open_article(self, title: str) -> ArticlePage:
-        self.articles.locator(self._article_link_named.format(title=quoted(title))).first.click()
+        # No .first: one link per title (checked live); strict mode reports a duplicate title.
+        self.articles.locator(self._article_link_named.format(title=quoted(title))).click()
         self.page.wait_for_url("**/blogs/news/**")
         page = ArticlePage(self.page)
         page.wait_until_loaded()
