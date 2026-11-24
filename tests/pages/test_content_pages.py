@@ -1,6 +1,9 @@
 """Content, blog, account, and error pages."""
 
+import re
+
 import pytest
+from playwright.sync_api import expect
 
 from framework.adapters.web.shop import Shop
 from framework.testdata import new_customer
@@ -21,7 +24,7 @@ def test_blog_lists_articles_that_open(shop: Shop) -> None:
     article = blog.open_article(articles[0].title)
     assert article.heading_text() == articles[0].title
     assert article.author() == "Shopify"
-    assert shop.page.url.endswith(articles[0].handle)
+    expect(shop.page).to_have_url(re.compile(re.escape(articles[0].handle) + "$"))
 
 
 def test_article_opens_directly_by_its_handle(shop: Shop) -> None:
@@ -42,7 +45,7 @@ def test_login_page_and_password_recovery_toggle(shop: Shop) -> None:
     # Never submitted: the live shop uses CAPTCHA, and recovery sends real e-mail.
     login = shop.login().open()
     login.fill_credentials("someone@example.com", "not-submitted")
-    assert login.email.input_value() == "someone@example.com"
+    expect(login.email).to_have_value("someone@example.com")
     login.show_password_recovery()
     login.hide_password_recovery()
 
@@ -52,8 +55,8 @@ def test_register_form_accepts_a_customer(shop: Shop) -> None:
     register = shop.register().open()
     customer = new_customer()
     register.fill_form(customer)
-    assert register.email.input_value() == customer.email
-    assert register.first_name.input_value() == customer.first_name
+    expect(register.email).to_have_value(customer.email)
+    expect(register.first_name).to_have_value(customer.first_name)
 
 
 def test_unknown_address_shows_the_404_page(shop: Shop) -> None:

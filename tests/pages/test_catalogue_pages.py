@@ -1,8 +1,10 @@
 """Home, catalogue, product, and search pages."""
 
+import re
 from decimal import Decimal
 
 import pytest
+from playwright.sync_api import expect
 
 from framework.adapters.web.components import MainMenu
 from framework.adapters.web.shop import Shop
@@ -40,7 +42,8 @@ def test_catalogue_card_opens_its_product_page(shop: Shop) -> None:
     product = shop.product()
     product.wait_until_loaded()
     assert product.read().name == "Black heels"
-    assert shop.page.url.endswith("/products/flower-print-jeans")
+    # The demo store's data really maps "Black heels" to this handle (catalogue snapshot).
+    expect(shop.page).to_have_url(re.compile(r"/products/flower-print-jeans$"))
 
 
 def test_product_page_selects_a_variant_and_adds_it(shop: Shop) -> None:

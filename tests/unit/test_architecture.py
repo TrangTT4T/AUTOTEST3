@@ -123,6 +123,56 @@ def test_events_tests_use_the_flow_not_the_wire(path: Path) -> None:
     assert not forbidden, f"{_rel(path)} imports {forbidden}: talk to OrderFlow (framework/events)"
 
 
+# Reads that return ONE snapshot of the page. Asserting on them directly races the UI: use the
+# auto-retrying expect(...) (to_have_text / to_have_count / to_have_value / to_have_url ...).
+SNAPSHOT_READS = frozenset(
+    {
+        "inner_text",
+        "text_content",
+        "input_value",
+        "is_visible",
+        "is_hidden",
+        "is_enabled",
+        "is_disabled",
+        "is_checked",
+        "is_editable",
+        "all_inner_texts",
+        "all_text_contents",
+    }
+)
+
+
+def _snapshot_asserts(path: Path) -> list[int]:
+    """Lines where an ``assert`` checks a one-off DOM read (zero-argument Locator reads, page.url)."""
+    found = []
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if not isinstance(node, ast.Assert):
+            continue
+        for sub in ast.walk(node.test):
+            # Locator.count() takes no argument (list.count(x) does): only zero-argument reads count.
+            snapshot = (
+                isinstance(sub, ast.Call)
+                and isinstance(sub.func, ast.Attribute)
+                and not sub.args
+                and sub.func.attr in SNAPSHOT_READS | {"count"}
+            )
+            page_url = (
+                isinstance(sub, ast.Attribute)
+                and sub.attr == "url"
+                and isinstance(sub.value, ast.Attribute)
+                and sub.value.attr == "page"
+            )
+            if snapshot or page_url:
+                found.append(node.lineno)
+    return sorted(set(found))
+
+
+@pytest.mark.parametrize("path", _python_files("tests/pages", "tests/e2e"), ids=_rel)
+def test_ui_checks_use_web_first_assertions(path: Path) -> None:
+    lines = _snapshot_asserts(path)
+    assert not lines, f"{_rel(path)}: assert on a one-off page read on lines {lines}; use expect(...)"
+
+
 API_CLIENT_FILES = [ROOT / "framework/events/client.py", ROOT / "framework/adapters/web/api.py"]
 
 

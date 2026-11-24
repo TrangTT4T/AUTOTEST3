@@ -45,8 +45,10 @@ class LoginPage(BasePage):
 
     def sign_in(self, email: str, password: str) -> None:
         self.fill_credentials(email, password)
-        self.sign_in_button.click()
-        self.page.wait_for_load_state("domcontentloaded")
+        # Wait for the server's answer to THIS submit. A load-state wait would return at once:
+        # the current page is already loaded, so it proves nothing about the sign-in.
+        with self.page.expect_response(lambda r: r.request.method == "POST" and "/account/login" in r.url):
+            self.sign_in_button.click()
 
     def errors(self) -> list[str]:
         return [e.strip() for e in self.form_errors.all_inner_texts() if e.strip()]
@@ -107,8 +109,8 @@ class RegisterPage(BasePage):
     def register(self, customer: Customer) -> None:
         """Creates a real account on a real shop: use only in an owned test environment."""
         self.fill_form(customer)
-        self.create_button.click()
-        self.page.wait_for_load_state("domcontentloaded")
+        with self.page.expect_response(lambda r: r.request.method == "POST" and r.url.endswith("/account")):
+            self.create_button.click()
 
     # --- Locators -------------------------------------------------------------
     _heading = "role=heading[name='Create Account']"

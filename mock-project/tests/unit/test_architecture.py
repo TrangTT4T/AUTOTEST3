@@ -73,6 +73,60 @@ def test_steps_never_touch_playwright(path: Path) -> None:
 
 
 # The retry helper itself (it documents the rule), its browser adapter, and the slider's sampling cadence.
+
+
+# Reads that return ONE snapshot of the page. Asserting on them directly races the UI: use the
+# auto-retrying expect(...) (to_have_text / to_have_count / to_have_value / to_have_url ...).
+SNAPSHOT_READS = frozenset(
+    {
+        "inner_text",
+        "text_content",
+        "input_value",
+        "is_visible",
+        "is_hidden",
+        "is_enabled",
+        "is_disabled",
+        "is_checked",
+        "is_editable",
+        "all_inner_texts",
+        "all_text_contents",
+    }
+)
+
+
+def _snapshot_asserts(path: Path) -> list[int]:
+    """Lines where an ``assert`` checks a one-off DOM read (zero-argument Locator reads, page.url)."""
+    found = []
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if not isinstance(node, ast.Assert):
+            continue
+        for sub in ast.walk(node.test):
+            # Locator.count() takes no argument (list.count(x) does): only zero-argument reads count.
+            snapshot = (
+                isinstance(sub, ast.Call)
+                and isinstance(sub.func, ast.Attribute)
+                and not sub.args
+                and sub.func.attr in SNAPSHOT_READS | {"count"}
+            )
+            page_url = (
+                isinstance(sub, ast.Attribute)
+                and sub.attr == "url"
+                and isinstance(sub.value, ast.Attribute)
+                and sub.value.attr == "page"
+            )
+            if snapshot or page_url:
+                found.append(node.lineno)
+    return sorted(set(found))
+
+
+@pytest.mark.parametrize("path", STEPS, ids=lambda p: p.name)
+def test_steps_check_the_ui_with_web_first_assertions(path: Path) -> None:
+    lines = _snapshot_asserts(path)
+    assert not lines, (
+        f"{path.name}: assert on a one-off page read on lines {lines}; add a page-object expect_*"
+    )
+
+
 ALLOWED_FIXED_WAITS = {"swaglabs/waiting.py", "swaglabs/app.py", "swaglabs/pages/dynamic.py"}
 
 

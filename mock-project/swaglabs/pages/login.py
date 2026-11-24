@@ -35,6 +35,9 @@ class LoginPage(BasePage):
         self.find(self._error_close).click()
         expect(self.error).to_have_count(0)
 
+    def expect_no_error(self) -> None:
+        expect(self.error).to_have_count(0)
+
     def expect_fields_marked_invalid(self) -> None:
         for field in (self.username, self.password):
             expect(field).to_have_class(re.compile(self._invalid_class))

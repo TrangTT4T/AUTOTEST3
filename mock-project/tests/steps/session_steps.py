@@ -65,7 +65,7 @@ def close_error(shop: SwagLabs) -> None:
 
 @then("no login error is shown")
 def no_error(shop: SwagLabs) -> None:
-    assert shop.login_page().error.count() == 0
+    shop.login_page().expect_no_error()
 
 
 @when(parsers.parse('I open "{path}" without logging in'))
