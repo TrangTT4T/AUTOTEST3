@@ -7,7 +7,7 @@ import time
 from pytest_bdd import parsers, then, when
 
 from swaglabs.app import SwagLabs
-from swaglabs.pages.dynamic import Tile
+from swaglabs.domain import Tile
 from tests.steps.memo import Memo
 
 SAMPLE_EVERY_MS = 250

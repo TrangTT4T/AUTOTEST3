@@ -3,29 +3,12 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 
 from playwright.sync_api import Locator, Page, expect
 
-from swaglabs.domain import Money, Product, SortOrder
+from swaglabs.domain import Card, Money, Product, SortOrder
 from swaglabs.pages.base import BasePage
 from swaglabs.pages.header import Header
-
-# One round trip reads every card at once: a consistent snapshot, even if the page re-renders.
-_READ_CARDS = """(cards, s) => cards.map(card => ({
-    name: card.querySelector(s.name).innerText,
-    price: card.querySelector(s.price).innerText,
-    image: card.querySelector(s.image).getAttribute('src'),
-}))"""
-
-
-@dataclass(frozen=True)
-class Card:
-    """One catalogue card as shown on screen (the price is what the shopper SEES)."""
-
-    name: str
-    price: Money
-    image_src: str
 
 
 class InventoryPage(BasePage):
@@ -44,7 +27,7 @@ class InventoryPage(BasePage):
     # --- reading -------------------------------------------------------------
     def read_cards(self) -> list[Card]:
         selectors = {"name": self._card_name, "price": self._card_price, "image": self._card_image}
-        rows = self.find(self._card).evaluate_all(_READ_CARDS, selectors)
+        rows = self.find(self._card).evaluate_all(self._read_cards_js, selectors)
         return [Card(r["name"], Money.parse(r["price"]), r["image"]) for r in rows]
 
     def expect_names(self, names: list[str]) -> None:
@@ -94,3 +77,11 @@ class InventoryPage(BasePage):
     _sort = "[data-test='product-sort-container']"
     _add = "[data-test='add-to-cart-{slug}']"
     _remove = "[data-test='remove-{slug}']"
+
+    # --- Scripts (run in the page) --------------------------------------------
+    # One round trip reads every card at once: a consistent snapshot, even if the page re-renders.
+    _read_cards_js = """(cards, s) => cards.map(card => ({
+        name: card.querySelector(s.name).innerText,
+        price: card.querySelector(s.price).innerText,
+        image: card.querySelector(s.image).getAttribute('src'),
+    }))"""

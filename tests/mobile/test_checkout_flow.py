@@ -3,6 +3,7 @@
 import pytest
 from appium.webdriver.webdriver import WebDriver
 
+from framework.adapters.mobile.forms import Address, Card
 from framework.adapters.mobile.screens import (
     CartScreen,
     CatalogScreen,
@@ -13,7 +14,6 @@ from framework.adapters.mobile.screens import (
     ReviewScreen,
     ShippingScreen,
 )
-from framework.adapters.mobile.screens.checkout import Address, Card
 from framework.adapters.mobile.steps import mobile_step
 from framework.domain import Catalogue, Money
 from framework.requirements_marks import covers

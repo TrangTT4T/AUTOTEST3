@@ -4,7 +4,7 @@ import pytest
 from appium.webdriver.webdriver import WebDriver
 
 from framework.adapters.mobile.screens import CartScreen, CatalogScreen, LoginScreen, ProductScreen
-from framework.adapters.mobile.screens.checkout import ShippingScreen
+from framework.adapters.mobile.screens.shipping import ShippingScreen
 from framework.adapters.mobile.steps import mobile_step
 from framework.requirements_marks import covers
 

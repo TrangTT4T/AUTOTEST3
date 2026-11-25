@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 from appium.webdriver.webdriver import WebDriver
 
-from framework.adapters.mobile.screens.checkout import Address, Card
+from framework.adapters.mobile.forms import Address, Card
 from framework.domain import Catalogue
 
 

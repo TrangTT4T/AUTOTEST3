@@ -381,3 +381,64 @@ def test_every_skip_and_xfail_says_why() -> None:
         for problem in _unexplained_skips(path.read_text(encoding="utf-8"))
     ]
     assert not problems, "\n".join(problems)
+
+
+# Page objects: ONE class per file, and its locators declared at the BOTTOM of the class (after
+# the last method), so a reader finds the behaviour first and every selector in one place.
+PAGE_OBJECT_FILES = [
+    p
+    for p in _python_files(
+        "framework/adapters/web/pages",
+        "framework/adapters/web/components",
+        "framework/adapters/mobile/screens",
+    )
+    if p.name != "__init__.py"
+]
+
+
+def _page_object_layout_violations(source: str) -> list[str]:
+    tree = ast.parse(source)
+    classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
+    problems = [] if len(classes) == 1 else [f"{len(classes)} classes; a page-object file has exactly one"]
+    problems += [
+        f"line {node.lineno}: selector at module level; declare it at the bottom of the class"
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        and isinstance(node.value, ast.Constant)
+        and isinstance(node.value.value, str)
+    ]
+    for cls in classes:
+        methods = [i for i, node in enumerate(cls.body) if isinstance(node, ast.FunctionDef)]
+        locators = [
+            i
+            for i, node in enumerate(cls.body)
+            if isinstance(node, ast.Assign)
+            and all(isinstance(t, ast.Name) and t.id.startswith("_") for t in node.targets)
+        ]
+        problems += [
+            f"line {cls.body[i].lineno}: {cls.name} declares a locator above a method; move it to the bottom"
+            for i in locators
+            if methods and i < methods[-1]
+        ]
+    return problems
+
+
+@pytest.mark.parametrize("path", PAGE_OBJECT_FILES, ids=_rel)
+def test_page_object_files_hold_one_class_with_its_locators_at_the_bottom(path: Path) -> None:
+    problems = _page_object_layout_violations(path.read_text(encoding="utf-8"))
+    assert not problems, f"{_rel(path)}:\n" + "\n".join(problems)
+
+
+def test_the_layout_rule_catches_two_classes_and_misplaced_locators() -> None:
+    sample = (
+        "SELECTOR = '#price'\n"  # 1: module level
+        "class A:\n"
+        "    _title = 'h1'\n"  # 3: above a method
+        "    def read(self): ...\n"
+        "    _ok = 'h2'\n"
+        "class B:\n"  # second class
+        "    def read(self): ...\n"
+    )
+    problems = _page_object_layout_violations(sample)
+    assert problems[0] == "2 classes; a page-object file has exactly one"
+    assert [p.split(":")[0] for p in problems[1:]] == ["line 1", "line 3"]

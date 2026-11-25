@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from playwright.sync_api import Page, expect
 
-from framework.adapters.web.components.cart_rows import read_rows, the_only_row
+from framework.adapters.web.components.cart_rows import CartRows
 from framework.adapters.web.components.header import Header
 from framework.domain import Cart, Catalogue, Money
 
@@ -34,13 +34,13 @@ class MiniCart:
     def read(self) -> Cart:
         """Lines as shown in the drawer. The drawer has no total, so it is the sum of the lines."""
         self.open()
-        lines = tuple(read_rows(self.rows, self._catalogue))
+        lines = tuple(CartRows(self.rows).read(self._catalogue))
         return Cart(lines, sum((line.line_total for line in lines), Money.zero()))
 
     def remove(self, name: str) -> None:
         handle = self._catalogue.by_name(name).handle
         rows = self.rows.filter(has=self.page.locator(self._row_product_link.format(handle=handle)))
-        row = the_only_row(rows, name)
+        row = CartRows(rows).the_only_one(name)
         with self.page.expect_response(lambda r: "/cart/change" in r.url):
             row.locator(self._row_remove_link).click()
 

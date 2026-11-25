@@ -44,6 +44,21 @@ def test_locators_are_declared_at_the_bottom_of_each_page_class(path: Path) -> N
         assert LOCATORS_MARKER in section, f"{path.name}:{cls.name}: put '{LOCATORS_MARKER}' above them"
 
 
+@pytest.mark.parametrize("path", [p for p in PAGES if p.name != "__init__.py"], ids=lambda p: p.name)
+def test_each_page_file_holds_one_class_and_no_module_level_selectors(path: Path) -> None:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    classes = [n.name for n in tree.body if isinstance(n, ast.ClassDef)]
+    assert len(classes) == 1, f"{path.name}: {classes} - one page object per file"
+    loose = [
+        n.lineno
+        for n in tree.body
+        if isinstance(n, ast.Assign) and isinstance(n.value, ast.Constant) and isinstance(n.value.value, str)
+    ]
+    assert loose == [], (
+        f"{path.name}: module-level strings on lines {loose}; declare them at the bottom of the class"
+    )
+
+
 @pytest.mark.parametrize("path", PAGES, ids=lambda p: p.name)
 def test_page_methods_use_declared_selectors_not_literals(path: Path) -> None:
     offenders = []
@@ -127,7 +142,7 @@ def test_steps_check_the_ui_with_web_first_assertions(path: Path) -> None:
     )
 
 
-ALLOWED_FIXED_WAITS = {"swaglabs/waiting.py", "swaglabs/app.py", "swaglabs/pages/dynamic.py"}
+ALLOWED_FIXED_WAITS = {"swaglabs/waiting.py", "swaglabs/app.py", "swaglabs/pages/slider_catalog.py"}
 
 
 def test_no_fixed_sleeps() -> None:

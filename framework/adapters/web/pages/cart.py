@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from playwright.sync_api import Locator, Page, expect
 
-from framework.adapters.web.components.cart_rows import read_rows, the_only_row
+from framework.adapters.web.components.cart_rows import CartRows
 from framework.adapters.web.pages.base import BasePage
 from framework.domain import Cart, Catalogue, Money
 
@@ -50,7 +50,7 @@ class CartPage(BasePage):
     def read(self) -> Cart:
         if self.is_empty():
             return Cart.empty()
-        lines = tuple(read_rows(self._rows(), self._catalogue))
+        lines = tuple(CartRows(self._rows()).read(self._catalogue))
         return Cart(lines, Money.parse(self.total.inner_text()))
 
     def header_count(self) -> int:
@@ -58,7 +58,7 @@ class CartPage(BasePage):
 
     # --- changing ------------------------------------------------------------
     def set_quantity(self, name: str, quantity: int) -> None:
-        the_only_row(self._rows_for(name), name).locator(self._row_quantity).fill(str(quantity))
+        CartRows(self._rows_for(name)).the_only_one(name).locator(self._row_quantity).fill(str(quantity))
         with self.page.expect_response(lambda r: r.url.endswith("/cart") and r.request.method == "POST"):
             self.update_button.click()
 

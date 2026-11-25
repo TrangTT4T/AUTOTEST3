@@ -9,19 +9,20 @@ tests/steps/*_steps.py        HOW a sentence maps to actions - talks only to Swa
         │
 swaglabs/app.py  SwagLabs     one facade: page objects, session/cart shortcuts, timing, waiting
         │
-swaglabs/pages/*.py           one class per page: selectors at the BOTTOM, methods return domain values
+swaglabs/pages/*.py           one class per FILE: selectors at the BOTTOM, methods return domain values
         │
 Playwright (browser)          driven only from pages/ and app.py
 
-swaglabs/domain.py            Money, Catalogue, Cart, OrderSummary, SortOrder  (the oracles)
+swaglabs/domain.py            Money, Catalogue, Cart, OrderSummary, SortOrder  (the oracles),
+                              Card, Tile (what a page shows)
 swaglabs/{requirements,findings,traceability,perf,evidence,waiting,matrix}.py
                               pure logic, no pytest, no browser - unit-tested to ≥ 90 % branches
 swaglabs/plugins/*.py         thin pytest glue: registry, findings, browser, reporting
 ```
 
 Rules that keep the layers honest are **tests**, not conventions (`tests/unit/test_architecture.py`):
-selectors live in the `# --- Locators ---` section at the bottom of each page class and are never
-written inline; steps never import Playwright or touch `.page`; nobody sleeps for a fixed time
+each page file holds exactly one class; its selectors live in the `# --- Locators ---` section at
+the bottom of the class (page scripts below them), never inline or at module level; steps never import Playwright or touch `.page`; nobody sleeps for a fixed time
 (except the retry helper's back-off and the slider's sampling cadence); no password in feature
 files or docs.
 

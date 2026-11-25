@@ -8,9 +8,8 @@ from dataclasses import dataclass, field
 import pytest
 
 from swaglabs.app import SwagLabs
-from swaglabs.domain import Product
+from swaglabs.domain import Card, Product
 from swaglabs.pages import SideMenu
-from swaglabs.pages.inventory import Card
 
 
 @dataclass

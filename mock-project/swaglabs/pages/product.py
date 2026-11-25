@@ -6,10 +6,9 @@ from urllib.parse import parse_qs, urlsplit
 
 from playwright.sync_api import Page, expect
 
-from swaglabs.domain import Money
+from swaglabs.domain import Card, Money
 from swaglabs.pages.base import BasePage
 from swaglabs.pages.header import Header
-from swaglabs.pages.inventory import Card
 
 
 class ProductPage(BasePage):

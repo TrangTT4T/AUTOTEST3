@@ -498,7 +498,7 @@ Part 10 extends this list to every page of the shop.
 
 > 🔴 **Why `raise AssertionError` and not `assert` in framework code?** Python removes `assert` statements when it runs with `-O`. A check written with `assert` inside a page object would then **silently disappear**, and a failed Add to Cart would pass. Tests may use `assert` (pytest rewrites and reports them); framework code raises explicitly. The linter enforces this (ruff rule `S101`, allowed only under `tests/`).
 
-**Locators are declared, not called.** Each page object and component lists its selectors as string constants in a `# --- Locators ---` section at the **bottom of the class**. Methods use only those names; a selector that depends on data is a template filled with `.format(...)`. An architecture test (`test_page_objects_declare_their_locators`) fails the build if a page object calls `get_by_role(...)` or writes a selector inline. Playwright reads these strings directly:
+**Locators are declared, not called.** Each page object and component lists its selectors as string constants in a `# --- Locators ---` section at the **bottom of the class**. Methods use only those names; a selector that depends on data is a template filled with `.format(...)`. **One class per file**: `login.py` holds `LoginPage` only, `register.py` holds `RegisterPage` only. Architecture tests fail the build if a page object calls `get_by_role(...)` or writes a selector inline (`test_page_objects_declare_their_locators`), if a file holds more than one class, or if a selector is declared above a method or at module level (`test_page_object_files_hold_one_class_with_its_locators_at_the_bottom`). Playwright reads these strings directly:
 - CSS (`#cart`);
 - `role=` (`role=button[name='Add to Cart']`, `role=heading[level=3]`);
 - `text=`;
@@ -1109,7 +1109,7 @@ Two lessons from building them:
         expect(self.cart_link).to_have_text(f"My Cart ({count})")
 ```
 
-- **Shared parsing lives once.** The cart page and the mini-cart use the same row markup, so both call `components/cart_rows.py: read_rows(...)`.
+- **Shared parsing lives once.** The cart page and the mini-cart use the same row markup, so both use `components/cart_rows.py: CartRows(rows).read(...)`.
 
 ### 10.2 Pages
 
@@ -1285,8 +1285,9 @@ shop-bdd/
 │   │       ├── diagnostics.py    BrowserDiagnostics
 │   │       ├── shop.py           Shop facade
 │   │       ├── components/       header, main_menu, mini_cart, product_grid, breadcrumb, cart_rows
-│   │       └── pages/            base, home, catalog, product, cart, search, checkout,
-│   │                             content, blog (+ article), account (login, register), not_found
+│   │       └── pages/            one class per file: base, home, catalog, product, cart,
+│   │                             search, checkout, content, blog, article, login, register,
+│   │                             not_found
 │   └── plugins/
 │       ├── fixtures.py           settings, live_catalogue, store
 │       ├── tags.py               markers from registry, @manual, tag rules

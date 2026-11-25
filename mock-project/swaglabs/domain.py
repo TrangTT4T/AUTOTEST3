@@ -221,3 +221,26 @@ class OrderSummary:
         if self.subtotal + self.tax != self.total:
             return [f"total {self.total} != subtotal {self.subtotal} + tax {self.tax}"]
         return []
+
+
+# --- What a page shows (read by page objects, compared by steps) -------------------------
+
+
+@dataclass(frozen=True)
+class Card:
+    """One catalogue card as shown on screen (the price is what the shopper SEES)."""
+
+    name: str
+    price: Money
+    image_src: str
+
+
+@dataclass(frozen=True)
+class Tile:
+    """A product tile on a dynamic page. ``loading`` = still a placeholder."""
+
+    id: str
+    name: str | None
+    price: Money | None
+    loading: bool
+    on_screen: bool

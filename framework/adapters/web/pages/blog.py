@@ -1,9 +1,10 @@
-"""Blog list (/blogs/news) and article pages (/blogs/news/<handle>)."""
+"""Blog list: /blogs/news."""
 
 from __future__ import annotations
 
 from playwright.sync_api import Page, expect
 
+from framework.adapters.web.pages.article import ArticlePage
 from framework.adapters.web.pages.base import BasePage
 from framework.adapters.web.selectors import quoted
 from framework.domain import ArticleSummary
@@ -47,30 +48,3 @@ class BlogPage(BasePage):
     _articles = "role=article"
     _article_title_link = "role=heading[level=2] >> role=link"  # inside one article
     _article_link_named = "role=link[name={title} s]"  # inside the articles
-
-
-class ArticlePage(BasePage):
-    def __init__(self, page: Page) -> None:
-        super().__init__(page)
-        self.article = self.find(self._article)
-        self.heading = self.find(self._heading)
-
-    def open_article(self, handle: str) -> ArticlePage:
-        return self.open_path(f"{BlogPage.PATH}/{handle}")
-
-    def wait_until_loaded(self) -> None:
-        expect(self.heading).to_be_visible()
-
-    def heading_text(self) -> str:
-        return self.heading.inner_text().strip()
-
-    def author(self) -> str:
-        """'Posted by Shopify' -> 'Shopify'."""
-        for line in self.article.inner_text().splitlines():
-            if line.strip().startswith("Posted by"):
-                return line.strip().removeprefix("Posted by").strip()
-        return ""
-
-    # --- Locators -------------------------------------------------------------
-    _article = "role=article"
-    _heading = "role=article >> role=heading[level=2]"
