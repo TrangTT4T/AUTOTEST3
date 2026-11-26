@@ -6,7 +6,7 @@
 | **Learning outcome** | **LO2** — Implement BDD specifications with maintainable steps, hooks, tags, reporting, and traceable evidence (Bloom **B3: Apply**) |
 | **Format** | Concept/Lecture · Virtual · 120 minutes · code is studied, not submitted |
 | **System under test** | https://sauce-demo.myshopify.com/ — today replaced by an in-memory **FakeStore**, so everything runs offline |
-| **Stack** | Python 3.10+ · `pytest` · `pytest-bdd` (tested with pytest 9.2 and pytest-bdd 9.0.1) |
+| **Stack** | Python 3.12 · `pytest` · `pytest-bdd` (tested with pytest 9.2 and pytest-bdd 9.0.1) |
 | **Output of the day** | A one-page **Framework Design** + a working offline project you understand line by line |
 | **Companion code** | `day2-code/shop-bdd.zip` — the finished project from this guide |
 
@@ -66,7 +66,7 @@ Lecture time plan (120 min). Doing all the follow-along stages yourself takes ab
 
 ### 0.1 Set up a project folder
 
-Install Python 3.10 or newer from python.org. Then, in a terminal:
+Install Python 3.12 from python.org (the version in `.python-version`; CI and Docker use 3.12 too). Then, in a terminal:
 
 **Windows (PowerShell):**
 

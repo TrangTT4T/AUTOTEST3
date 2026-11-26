@@ -8,12 +8,9 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from typing import TypeVar
-
-T = TypeVar("T")
 
 
-def wait_until(
+def wait_until[T](
     read: Callable[[], T],
     done: Callable[[T], bool],
     *,
@@ -34,7 +31,7 @@ def wait_until(
     return value
 
 
-def holds_for(
+def holds_for[T](
     read: Callable[[], T],
     condition: Callable[[T], bool],
     *,
@@ -58,7 +55,7 @@ def holds_for(
         value = read()
 
 
-def wait_until_stable(
+def wait_until_stable[T](
     read: Callable[[], T],
     *,
     quiet: float,

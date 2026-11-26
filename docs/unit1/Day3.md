@@ -6,7 +6,7 @@
 | **Learning outcome** | **LO2** — Implement BDD specifications with maintainable steps, hooks, tags, reporting, and traceable evidence (Bloom **B3: Apply**) |
 | **Format** | Assignment/Lab · Hybrid · 150 minutes · **code is the deliverable** |
 | **System under test** | https://sauce-demo.myshopify.com/ — the real store, in a real browser |
-| **Stack** | Python 3.11+ · `pytest` · `pytest-bdd` · `pytest-playwright` · `pytest-xdist` · `ruff` · `mypy` (all pinned) |
+| **Stack** | Python 3.12 · `pytest` · `pytest-bdd` · `pytest-playwright` · `pytest-xdist` · `ruff` · `mypy` (all pinned) |
 | **Starting point** | The Day 2 project (`day2-code/shop-bdd.zip`) |
 | **Finished project** | `day3-code/shop-bdd.zip` — senior-level reference framework with README and CI |
 | **Output of the day** | Executable specifications for all 9 requirements on a layered framework (domain model, port, page objects, API client), governed by a requirement registry, with failure evidence, a traceability matrix, quality gates, and CI |

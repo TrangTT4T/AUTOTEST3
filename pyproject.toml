@@ -57,7 +57,7 @@ filterwarnings = [
 
 [tool.ruff]
 line-length = 110
-target-version = "py311"
+target-version = "py312"
 extend-exclude = ["docs"]  # course guides: their code blocks are illustrations, not project code
 
 [tool.ruff.lint]
@@ -100,7 +100,7 @@ ignore = [
 "tools/**" = ["T201"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 files = ["framework", "tests", "sandbox"]
 warn_unused_ignores = true

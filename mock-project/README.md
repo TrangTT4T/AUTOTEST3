@@ -15,6 +15,8 @@ bottleneck analysis, and a written design defense. No cloud account is needed.
 
 ## Quick start
 
+Requires **Python 3.12**: the version in `.python-version` (PyCharm, VS Code, pyenv and uv pick it up), the same as CI and the Docker image of Units 3–5.
+
 ```bash
 python -m venv .venv && . .venv/bin/activate
 pip install -r requirements-dev.txt
